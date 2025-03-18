@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { bookingAPI, hotelAPI, userAPI } from '@/services/api';
@@ -39,25 +38,21 @@ const AdminBookings = () => {
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
-  // Fetch all bookings
   const { data: bookings, isLoading: isLoadingBookings, error: bookingsError } = useQuery({
     queryKey: ['admin-bookings'],
     queryFn: () => bookingAPI.getAllBookings(),
   });
 
-  // Fetch hotels for reference
   const { data: hotels } = useQuery({
     queryKey: ['hotels'],
     queryFn: hotelAPI.getAllHotels,
   });
 
-  // Fetch users for reference
   const { data: users } = useQuery({
     queryKey: ['users'],
     queryFn: userAPI.getAllUsers,
   });
 
-  // Update booking status mutation
   const updateBookingMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => 
       bookingAPI.updateBooking(id, { status: status as any }),
@@ -70,7 +65,6 @@ const AdminBookings = () => {
     }
   });
 
-  // Delete booking mutation
   const deleteBookingMutation = useMutation({
     mutationFn: bookingAPI.deleteBooking,
     onSuccess: () => {
@@ -144,7 +138,6 @@ const AdminBookings = () => {
         <h2 className="text-2xl font-bold">Bookings Management</h2>
       </div>
 
-      {/* Bookings Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -235,7 +228,6 @@ const AdminBookings = () => {
         </Table>
       </div>
 
-      {/* View Booking Details Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -321,7 +313,6 @@ const AdminBookings = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Receipt Dialog */}
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -350,7 +341,6 @@ const AdminBookings = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Booking Confirmation */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>

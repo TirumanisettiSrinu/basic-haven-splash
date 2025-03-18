@@ -52,7 +52,7 @@ const AdminUsers = () => {
 
   // Create user mutation
   const createUserMutation = useMutation({
-    mutationFn: userAPI.updateUser,
+    mutationFn: (userData: Partial<User>) => userAPI.createUser(userData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('User created successfully');
@@ -80,7 +80,7 @@ const AdminUsers = () => {
 
   // Delete user mutation
   const deleteUserMutation = useMutation({
-    mutationFn: userAPI.deleteUser,
+    mutationFn: (id: string) => userAPI.deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('User deleted successfully');
