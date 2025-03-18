@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -19,14 +18,14 @@ import {
   Trash, 
   Bed,
   Check,
-  X
+  X,
+  Calendar
 } from 'lucide-react';
-import { hotelAPI, roomAPI, userAPI, workerAPI } from '@/services/api';
+import { hotelAPI, roomAPI, userAPI, workerAPI, bookingAPI } from '@/services/api';
 import { toast } from 'sonner';
-import { Hotel as HotelType, Room as RoomType, User as UserType, Worker } from '@/types';
+import { Hotel as HotelType, Room as RoomType, User as UserType, Worker, Booking } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
-// Enhanced ModeratorDashboard component
 const ModeratorDashboard = () => {
   const { state } = useAuth();
   const { user } = state;
@@ -36,9 +35,9 @@ const ModeratorDashboard = () => {
   const [hotels, setHotels] = useState<HotelType[]>([]);
   const [rooms, setRooms] = useState<RoomType[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Worker form state
   const [isWorkerDialogOpen, setIsWorkerDialogOpen] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [workerFormData, setWorkerFormData] = useState<Partial<Worker>>({
@@ -52,29 +51,26 @@ const ModeratorDashboard = () => {
     assignedRooms: []
   });
   
-  // Fetch data for dashboard
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         
-        // Fetch hotels and workers data
-        const [hotelsData, workersData] = await Promise.all([
+        const [hotelsData, workersData, bookingsData] = await Promise.all([
           hotelAPI.getAllHotels(),
-          workerAPI.getAllWorkers()
+          workerAPI.getAllWorkers(),
+          bookingAPI.getAllBookings()
         ]);
         
         setHotels(hotelsData || []);
+        setBookings(bookingsData || []);
         
-        // Ensure workers data matches our Worker type
         if (Array.isArray(workersData)) {
           setWorkers(workersData);
         }
         
-        // Create an array to hold all rooms
         let allRooms: RoomType[] = [];
         
-        // Fetch rooms for each hotel
         for (const hotel of hotelsData) {
           if (hotel._id) {
             const hotelRooms = await roomAPI.getRoomsForHotel(hotel._id);
@@ -140,12 +136,10 @@ const ModeratorDashboard = () => {
     
     try {
       if (selectedWorker) {
-        // Update existing worker
         const updatedWorker = await workerAPI.updateWorker(selectedWorker._id || '', workerFormData);
         setWorkers(workers.map(w => w._id === selectedWorker._id ? updatedWorker as Worker : w));
         toast.success('Worker updated successfully');
       } else {
-        // Create new worker
         const newWorker = await workerAPI.createWorker(workerFormData);
         setWorkers([...workers, newWorker as Worker]);
         toast.success('Worker added successfully');
@@ -173,11 +167,7 @@ const ModeratorDashboard = () => {
     if (!room._id) return;
     
     try {
-      const updatedRoom = await roomAPI.updateRoom(room._id, {
-        ...room,
-        isCleaned: !room.isCleaned,
-        needsCleaning: room.isCleaned // If it was cleaned, it now needs cleaning and vice versa
-      });
+      const updatedRoom = await roomAPI.toggleRoomCleaningStatus(room._id, !room.isCleaned);
       
       setRooms(rooms.map(r => r._id === room._id ? updatedRoom as RoomType : r));
       
@@ -198,12 +188,11 @@ const ModeratorDashboard = () => {
             <header className="mb-8">
               <h1 className="text-3xl font-bold">Moderator Dashboard</h1>
               <p className="text-muted-foreground">
-                Manage workers and room status
+                Manage workers, room status, and bookings
               </p>
             </header>
             
-            {/* Dashboard Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -247,24 +236,39 @@ const ModeratorDashboard = () => {
                   </p>
                 </CardContent>
               </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Active Bookings
+                  </CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {bookings.filter(b => b.status === 'active' || b.status === 'confirmed').length}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    out of {bookings.length} total bookings
+                  </p>
+                </CardContent>
+              </Card>
             </div>
             
-            {/* Dashboard Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-3 mb-8">
+              <TabsList className="grid grid-cols-4 mb-8">
                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                 <TabsTrigger value="workers">Workers</TabsTrigger>
                 <TabsTrigger value="rooms">Rooms</TabsTrigger>
+                <TabsTrigger value="bookings">Bookings</TabsTrigger>
               </TabsList>
               
-              {/* Dashboard Tab */}
               <TabsContent value="dashboard" className="space-y-6">
                 <h2 className="text-xl font-semibold mb-4">Overview</h2>
                 <p className="text-muted-foreground mb-6">
-                  Welcome to the StayHaven moderator dashboard. Here you can manage workers and room cleaning status.
+                  Welcome to the StayHaven moderator dashboard. Here you can manage workers, room cleaning status, and view bookings.
                 </p>
                 
-                {/* Hotels overview */}
                 <h3 className="text-lg font-medium mb-3">Assigned Hotels</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                   {hotels.map(hotel => (
@@ -294,7 +298,6 @@ const ModeratorDashboard = () => {
                   ))}
                 </div>
                 
-                {/* Recent activity - simplified for demo */}
                 <h3 className="text-lg font-medium mb-3">Recent Activity</h3>
                 <Card>
                   <CardContent className="p-4">
@@ -319,7 +322,6 @@ const ModeratorDashboard = () => {
                 </Card>
               </TabsContent>
               
-              {/* Workers Tab */}
               <TabsContent value="workers" className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Workers</h2>
@@ -389,7 +391,6 @@ const ModeratorDashboard = () => {
                 </div>
               </TabsContent>
               
-              {/* Rooms Tab */}
               <TabsContent value="rooms" className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Room Cleaning Status</h2>
@@ -451,13 +452,83 @@ const ModeratorDashboard = () => {
                   })}
                 </div>
               </TabsContent>
+              
+              <TabsContent value="bookings" className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Bookings</h2>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  {bookings.map(booking => {
+                    const hotel = hotels.find(h => h._id === booking.hotelId);
+                    
+                    return (
+                      <Card key={booking._id} className="overflow-hidden">
+                        <div className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-bold text-lg">Booking #{booking._id?.substring(0, 8)}...</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Room {booking.roomNumber} at {hotel?.name || 'Unknown Hotel'}
+                              </p>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const newStatus = booking.status === 'active' || booking.status === 'confirmed' ? 'completed' : 'active';
+                                  bookingAPI.updateBooking(booking._id || '', { status: newStatus })
+                                    .then(updatedBooking => {
+                                      setBookings(bookings.map(b => b._id === booking._id ? updatedBooking as Booking : b));
+                                      toast.success(`Booking marked as ${newStatus}`);
+                                    })
+                                    .catch(error => {
+                                      console.error('Error updating booking:', error);
+                                      toast.error('Failed to update booking');
+                                    });
+                                }}
+                              >
+                                {booking.status === 'active' || booking.status === 'confirmed' ? 'Mark Completed' : 'Mark Active'}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                              <span className="text-sm font-medium">Check In: </span>
+                              <span className="text-sm">{new Date(booking.dateStart).toLocaleDateString()}</span>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Check Out: </span>
+                              <span className="text-sm">{new Date(booking.dateEnd).toLocaleDateString()}</span>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Price: </span>
+                              <span className="text-sm">${booking.totalPrice}</span>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Status: </span>
+                              <span className="text-sm capitalize">{booking.status}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                  
+                  {bookings.length === 0 && (
+                    <Card className="p-8 text-center">
+                      <p className="text-muted-foreground">No bookings found.</p>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
         </main>
         
         <Footer />
         
-        {/* Worker Dialog */}
         <Dialog open={isWorkerDialogOpen} onOpenChange={setIsWorkerDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>

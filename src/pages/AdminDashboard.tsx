@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -8,12 +7,11 @@ import Footer from '@/components/Footer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Hotel, Bed, Users, ArrowUpRight, Plus, Edit, Trash } from 'lucide-react';
-import { hotelAPI, roomAPI, userAPI } from '@/services/api';
+import { Hotel, Bed, Users, ArrowUpRight, Plus, Edit, Trash, Calendar } from 'lucide-react';
+import { hotelAPI, roomAPI, userAPI, bookingAPI } from '@/services/api';
 import { toast } from 'sonner';
-import { Hotel as HotelType, Room as RoomType, User as UserType } from '@/types';
+import { Hotel as HotelType, Room as RoomType, User as UserType, Booking as BookingType } from '@/types';
 
-// Admin Dashboard component with authentication guard
 const AdminDashboard = () => {
   const { state } = useAuth();
   const { user } = state;
@@ -23,27 +21,26 @@ const AdminDashboard = () => {
   const [hotels, setHotels] = useState<HotelType[]>([]);
   const [rooms, setRooms] = useState<RoomType[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
+  const [bookings, setBookings] = useState<BookingType[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Fetch data for dashboard
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         
-        // Fetch hotels, rooms, and users data
-        const [hotelsData, usersData] = await Promise.all([
+        const [hotelsData, usersData, bookingsData] = await Promise.all([
           hotelAPI.getAllHotels(),
-          userAPI.getAllUsers()
+          userAPI.getAllUsers(),
+          bookingAPI.getAllBookings()
         ]);
         
         setHotels(hotelsData || []);
         setUsers(usersData || []);
+        setBookings(bookingsData || []);
         
-        // Create an array to hold all rooms
         let allRooms: RoomType[] = [];
         
-        // Fetch rooms for each hotel
         for (const hotel of hotelsData) {
           if (hotel._id) {
             const hotelRooms = await roomAPI.getRoomsForHotel(hotel._id);
@@ -65,10 +62,8 @@ const AdminDashboard = () => {
     fetchDashboardData();
   }, []);
   
-  // For demo purposes, create some mock data if no real data exists
   useEffect(() => {
     if (!loading && hotels.length === 0) {
-      // Mock hotels
       const mockHotels = [
         {
           _id: 'h1',
@@ -106,7 +101,6 @@ const AdminDashboard = () => {
     }
     
     if (!loading && rooms.length === 0) {
-      // Mock rooms
       const mockRooms = [
         {
           _id: 'r1',
@@ -147,7 +141,6 @@ const AdminDashboard = () => {
     }
     
     if (!loading && users.length === 0) {
-      // Mock users
       const mockUsers = [
         {
           _id: 'u1',
@@ -232,8 +225,7 @@ const AdminDashboard = () => {
               </p>
             </header>
             
-            {/* Dashboard Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -279,26 +271,39 @@ const AdminDashboard = () => {
                   </p>
                 </CardContent>
               </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Bookings
+                  </CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{bookings.length}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {bookings.filter(b => b.status === 'active' || b.status === 'confirmed').length} active
+                  </p>
+                </CardContent>
+              </Card>
             </div>
             
-            {/* Dashboard Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-4 mb-8">
+              <TabsList className="grid grid-cols-5 mb-8">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="hotels">Hotels</TabsTrigger>
                 <TabsTrigger value="rooms">Rooms</TabsTrigger>
                 <TabsTrigger value="users">Users</TabsTrigger>
+                <TabsTrigger value="bookings">Bookings</TabsTrigger>
               </TabsList>
               
-              {/* Overview Tab */}
               <TabsContent value="overview" className="space-y-6">
                 <h2 className="text-xl font-semibold mb-4">System Overview</h2>
                 <p className="text-muted-foreground">
                   Welcome to the StayHaven admin dashboard. Here you can manage all aspects of your hotel booking system.
                 </p>
                 
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
                   <Button onClick={() => setActiveTab('hotels')} variant="outline" className="justify-between">
                     <span>Manage Hotels</span>
                     <ArrowUpRight className="h-4 w-4" />
@@ -311,10 +316,13 @@ const AdminDashboard = () => {
                     <span>Manage Users</span>
                     <ArrowUpRight className="h-4 w-4" />
                   </Button>
+                  <Button onClick={() => setActiveTab('bookings')} variant="outline" className="justify-between">
+                    <span>Manage Bookings</span>
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </TabsContent>
               
-              {/* Hotels Tab */}
               <TabsContent value="hotels" className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Hotels</h2>
@@ -390,7 +398,6 @@ const AdminDashboard = () => {
                 </div>
               </TabsContent>
               
-              {/* Rooms Tab */}
               <TabsContent value="rooms" className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Rooms</h2>
@@ -422,7 +429,6 @@ const AdminDashboard = () => {
                             <Button 
                               variant="destructive" 
                               size="sm"
-                              // Use a hotel ID from mock data for demo
                               onClick={() => handleDeleteRoom(room._id || '', 'h1')}
                             >
                               <Trash className="h-4 w-4" />
@@ -456,7 +462,6 @@ const AdminDashboard = () => {
                 </div>
               </TabsContent>
               
-              {/* Users Tab */}
               <TabsContent value="users" className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Users</h2>
@@ -525,6 +530,77 @@ const AdminDashboard = () => {
                     </Card>
                   ))}
                 </div>
+              </TabsContent>
+              
+              <TabsContent value="bookings" className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Bookings</h2>
+                  <Button onClick={() => navigate('/admin/bookings')} size="sm">
+                    <ArrowUpRight className="h-4 w-4 mr-2" />
+                    Manage All Bookings
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  {bookings.slice(0, 5).map(booking => {
+                    const user = users.find(u => u._id === booking.userId);
+                    const hotel = hotels.find(h => h._id === booking.hotelId);
+                    
+                    return (
+                      <Card key={booking._id} className="overflow-hidden">
+                        <div className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-bold text-lg">Booking #{booking._id?.substring(0, 8)}...</h3>
+                              <p className="text-sm text-muted-foreground">
+                                by {user?.username || 'Unknown'} at {hotel?.name || 'Unknown'}
+                              </p>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => navigate(`/admin/bookings/${booking._id}`)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex justify-between items-center">
+                            <div>
+                              <span className="text-sm font-medium">Check-in: </span>
+                              <span className="text-sm">
+                                {new Date(booking.dateStart).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Check-out: </span>
+                              <span className="text-sm">
+                                {new Date(booking.dateEnd).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Status: </span>
+                              <span className="text-sm capitalize">{booking.status}</span>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Price: </span>
+                              <span className="text-sm">${booking.totalPrice}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+                
+                {bookings.length > 5 && (
+                  <div className="flex justify-center mt-4">
+                    <Button variant="outline" onClick={() => navigate('/admin/bookings')}>
+                      View All Bookings
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>

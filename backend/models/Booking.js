@@ -35,7 +35,7 @@ const BookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'cancelled', 'completed'],
+    enum: ['active', 'cancelled', 'completed', 'confirmed'],
     default: 'active'
   },
   receipt: {

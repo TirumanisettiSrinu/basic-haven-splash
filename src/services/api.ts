@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { Hotel, Room, User, Booking, SearchCriteria, Worker, Moderator } from '@/types';
 
@@ -252,31 +253,66 @@ export const hotelAPI = {
 // Rooms with enhanced booking functionality
 export const roomAPI = {
   getRoomsForHotel: async (hotelId: string) => {
-    const response = await api.get(`/rooms/hotel/${hotelId}`);
-    return response.data;
+    try {
+      const response = await api.get(`/rooms/hotel/${hotelId}`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
   },
   getRoomById: async (id: string) => {
-    const response = await api.get(`/rooms/${id}`);
-    return response.data;
+    try {
+      const response = await api.get(`/rooms/${id}`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
   },
   createRoom: async (hotelId: string, roomData: Partial<Room>) => {
-    const response = await api.post(`/rooms/${hotelId}`, roomData);
-    return response.data;
+    try {
+      const response = await api.post(`/rooms/${hotelId}`, roomData);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
   },
   updateRoom: async (id: string, roomData: Partial<Room>) => {
-    const response = await api.put(`/rooms/${id}`, roomData);
-    return response.data;
+    try {
+      const response = await api.put(`/rooms/${id}`, roomData);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
   },
   deleteRoom: async (id: string, hotelId: string) => {
-    const response = await api.delete(`/rooms/${id}/${hotelId}`);
-    return response.data;
+    try {
+      const response = await api.delete(`/rooms/${id}/${hotelId}`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
   },
   checkRoomAvailability: async (roomId: string, dateStart: Date, dateEnd: Date) => {
-    const response = await api.get(`/rooms/availability/${roomId}`, {
-      params: { dateStart, dateEnd },
-    });
-    return response.data;
+    try {
+      const response = await api.get(`/rooms/availability/${roomId}`, {
+        params: { dateStart, dateEnd },
+      });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
   },
+  toggleRoomCleaningStatus: async (roomId: string, isCleaned: boolean) => {
+    try {
+      const response = await api.put(`/rooms/${roomId}`, { 
+        isCleaned,
+        needsCleaning: !isCleaned
+      });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
 };
 
 // Bookings with cancellation functionality
@@ -317,6 +353,30 @@ export const bookingAPI = {
   getBookingReceipt: async (id: string) => {
     try {
       const response = await api.get(`/bookings/${id}/receipt`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+  updateBooking: async (id: string, bookingData: Partial<Booking>) => {
+    try {
+      const response = await api.put(`/bookings/${id}`, bookingData);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+  deleteBooking: async (id: string) => {
+    try {
+      const response = await api.delete(`/bookings/${id}`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+  getBookingById: async (id: string) => {
+    try {
+      const response = await api.get(`/bookings/${id}`);
       return response.data;
     } catch (error) {
       throw handleApiError(error);

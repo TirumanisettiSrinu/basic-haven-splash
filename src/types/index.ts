@@ -59,6 +59,7 @@ export interface Moderator {
     canManageRooms: boolean;
     canViewBookings: boolean;
   };
+  assignedHotels?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -88,8 +89,12 @@ export interface Booking {
   dateStart: Date;
   dateEnd: Date;
   totalPrice: number;
-  status: 'confirmed' | 'cancelled' | 'completed';
+  status: 'active' | 'cancelled' | 'completed' | 'confirmed';
   createdAt?: Date;
+  receipt?: {
+    issueDate: Date;
+    receiptNumber: string;
+  };
 }
 
 export interface AuthState {
