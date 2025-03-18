@@ -47,7 +47,7 @@ const ModeratorDashboard = () => {
     email: '',
     phone: '',
     isActive: true,
-    userId: '',
+    userId: user?._id || '',
     assignedRooms: []
   });
   
@@ -110,7 +110,7 @@ const ModeratorDashboard = () => {
       email: '',
       phone: '',
       isActive: true,
-      userId: user?.id || '',
+      userId: user?._id || '',
       assignedRooms: []
     });
     setIsWorkerDialogOpen(true);

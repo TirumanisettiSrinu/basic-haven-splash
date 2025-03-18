@@ -18,10 +18,11 @@ interface BookingFormProps {
   roomNumber: number;
   checkIn: Date | null;
   checkOut: Date | null;
+  totalNights?: number; // Add totalNights to the interface
   onClose: () => void;
 }
 
-const BookingForm = ({ hotel, room, roomNumber, checkIn, checkOut, onClose }: BookingFormProps) => {
+const BookingForm = ({ hotel, room, roomNumber, checkIn, checkOut, totalNights = 1, onClose }: BookingFormProps) => {
   const { state } = useAuth();
   const { user } = state;
   const navigate = useNavigate();
