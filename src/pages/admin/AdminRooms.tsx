@@ -93,13 +93,11 @@ const AdminRooms = () => {
     },
   });
 
-  // Fetch hotels
-  const { data: hotels, isLoading: isLoadingHotels } = useQuery({
+  const { data: hotels } = useQuery({
     queryKey: ['hotels'],
     queryFn: hotelAPI.getAllHotels,
   });
 
-  // Fetch rooms for all hotels
   const { data: allRooms, isLoading, error } = useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
@@ -108,7 +106,6 @@ const AdminRooms = () => {
       // Fetch rooms for all hotels
       const promises = hotels.map((hotel: Hotel) => 
         roomAPI.getRoomsForHotel(hotel._id as string)
-          .catch(() => []) // Handle case where hotel has no rooms
       );
       
       const results = await Promise.all(promises);
@@ -119,13 +116,11 @@ const AdminRooms = () => {
     enabled: !!hotels,
   });
 
-  // Create room mutation
   const createRoomMutation = useMutation({
     mutationFn: (data: { hotelId: string, roomData: Partial<Room> }) => 
       roomAPI.createRoom(data.hotelId, data.roomData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['hotels'] });
       toast.success('Room created successfully');
       setIsCreateDialogOpen(false);
       form.reset();
@@ -135,7 +130,6 @@ const AdminRooms = () => {
     }
   });
 
-  // Update room mutation
   const updateRoomMutation = useMutation({
     mutationFn: (data: { id: string, roomData: Partial<Room> }) => 
       roomAPI.updateRoom(data.id, data.roomData),
@@ -149,13 +143,11 @@ const AdminRooms = () => {
     }
   });
 
-  // Delete room mutation
   const deleteRoomMutation = useMutation({
     mutationFn: (data: { id: string, hotelId: string }) => 
       roomAPI.deleteRoom(data.id, data.hotelId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['hotels'] });
       toast.success('Room deleted successfully');
       setIsDeleteDialogOpen(false);
     },
@@ -203,7 +195,7 @@ const AdminRooms = () => {
 
   const handleDelete = () => {
     if (selectedRoom?._id) {
-      const hotelId = editForm.getValues('hotelId');
+      const hotelId = form.getValues('hotelId');
       deleteRoomMutation.mutate({
         id: selectedRoom._id,
         hotelId: hotelId,
@@ -254,7 +246,7 @@ const AdminRooms = () => {
     return 'Unknown Hotel';
   };
 
-  if (isLoading || isLoadingHotels) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-hotel-500" />
@@ -281,7 +273,6 @@ const AdminRooms = () => {
         <Button 
           onClick={() => setIsCreateDialogOpen(true)}
           className="bg-hotel-500 hover:bg-hotel-600"
-          disabled={!hotels || hotels.length === 0}
         >
           <Plus className="h-4 w-4 mr-2" />
           Add New Room

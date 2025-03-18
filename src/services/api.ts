@@ -192,16 +192,7 @@ export const moderatorAPI = {
       throw handleApiError(error);
     }
   },
-  createModerator: async (moderatorData: {
-    userId: string;
-    hotelId: string;
-    permissions: {
-      canManageWorkers: boolean;
-      canManageRooms: boolean;
-      canViewBookings: boolean;
-    };
-    isActive: boolean;
-  }) => {
+  createModerator: async (moderatorData: any) => {
     try {
       const response = await api.post('/moderators', moderatorData);
       return response.data;
@@ -209,7 +200,7 @@ export const moderatorAPI = {
       throw handleApiError(error);
     }
   },
-  updateModerator: async (id: string, moderatorData: Partial<Moderator>) => {
+  updateModerator: async (id: string, moderatorData: any) => {
     try {
       const response = await api.put(`/moderators/${id}`, moderatorData);
       return response.data;
@@ -220,14 +211,6 @@ export const moderatorAPI = {
   deleteModerator: async (id: string) => {
     try {
       const response = await api.delete(`/moderators/${id}`);
-      return response.data;
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  },
-  getModeratorByUserId: async (userId: string) => {
-    try {
-      const response = await api.get(`/moderators/user/${userId}`);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
