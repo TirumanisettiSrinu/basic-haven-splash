@@ -18,7 +18,7 @@ interface BookingFormProps {
   roomNumber: number;
   checkIn: Date | null;
   checkOut: Date | null;
-  totalNights?: number; // Add totalNights to the interface
+  totalNights?: number;
   onClose: () => void;
 }
 
@@ -54,7 +54,7 @@ const BookingForm = ({ hotel, room, roomNumber, checkIn, checkOut, totalNights =
   // Calculate total price when dates change
   useEffect(() => {
     if (dateRange.from && dateRange.to) {
-      const nights = differenceInCalendarDays(dateRange.to, dateRange.to < dateRange.from ? dateRange.from : dateRange.to);
+      const nights = differenceInCalendarDays(dateRange.to, dateRange.from);
       setTotalPrice(room.price * Math.max(1, nights));
     } else {
       setTotalPrice(0);

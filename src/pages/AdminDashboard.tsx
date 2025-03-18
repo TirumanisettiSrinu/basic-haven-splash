@@ -9,6 +9,9 @@ import Footer from '@/components/Footer';
 import { Loader2 } from 'lucide-react';
 import AdminBookings from './admin/AdminBookings';
 import AdminUsers from './admin/AdminUsers';
+import AdminHotels from './admin/AdminHotels';
+import AdminRooms from './admin/AdminRooms';
+import AdminModerators from './admin/AdminModerators';
 
 const AdminDashboard = () => {
   const { state } = useAuth();
@@ -64,17 +67,11 @@ const AdminDashboard = () => {
             </TabsContent>
             
             <TabsContent value="hotels" className="space-y-4">
-              <div className="grid">
-                <h2 className="text-xl font-semibold mb-4">Hotel Management</h2>
-                <p>Hotel management interface will be implemented here.</p>
-              </div>
+              <AdminHotels />
             </TabsContent>
             
             <TabsContent value="rooms" className="space-y-4">
-              <div className="grid">
-                <h2 className="text-xl font-semibold mb-4">Room Management</h2>
-                <p>Room management interface will be implemented here.</p>
-              </div>
+              <AdminRooms />
             </TabsContent>
             
             <TabsContent value="bookings" className="space-y-4">
@@ -82,10 +79,7 @@ const AdminDashboard = () => {
             </TabsContent>
             
             <TabsContent value="moderators" className="space-y-4">
-              <div className="grid">
-                <h2 className="text-xl font-semibold mb-4">Moderator Management</h2>
-                <p>Moderator management interface will be implemented here.</p>
-              </div>
+              <AdminModerators />
             </TabsContent>
           </Tabs>
         </div>
