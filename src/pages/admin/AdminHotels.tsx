@@ -90,11 +90,13 @@ const AdminHotels = () => {
     },
   });
 
+  // Fetch all hotels
   const { data: hotels, isLoading, error } = useQuery({
     queryKey: ['hotels'],
     queryFn: hotelAPI.getAllHotels,
   });
 
+  // Create hotel mutation
   const createHotelMutation = useMutation({
     mutationFn: hotelAPI.createHotel,
     onSuccess: () => {
@@ -108,6 +110,7 @@ const AdminHotels = () => {
     }
   });
 
+  // Update hotel mutation
   const updateHotelMutation = useMutation({
     mutationFn: (data: { id: string, hotelData: Partial<Hotel> }) => 
       hotelAPI.updateHotel(data.id, data.hotelData),
@@ -121,6 +124,7 @@ const AdminHotels = () => {
     }
   });
 
+  // Delete hotel mutation
   const deleteHotelMutation = useMutation({
     mutationFn: hotelAPI.deleteHotel,
     onSuccess: () => {
@@ -145,7 +149,12 @@ const AdminHotels = () => {
     if (selectedHotel?._id) {
       updateHotelMutation.mutate({
         id: selectedHotel._id,
-        hotelData: data,
+        hotelData: {
+          ...data,
+          // Preserve existing values that aren't being updated
+          photos: selectedHotel.photos,
+          rooms: selectedHotel.rooms,
+        },
       });
     }
   };
@@ -464,6 +473,7 @@ const AdminHotels = () => {
           
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              {/* Same form fields as create form */}
               <FormField
                 control={editForm.control}
                 name="name"
