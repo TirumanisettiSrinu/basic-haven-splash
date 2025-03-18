@@ -43,7 +43,7 @@ const Pricing = () => {
                 <TabsContent value="monthly" className="mt-4">
                   <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                     {/* Basic Plan */}
-                    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 flex flex-col">
+                    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 flex flex-col h-full">
                       <h3 className="text-xl font-bold mb-2">Basic</h3>
                       <div className="text-3xl font-bold mb-4">$9.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                       <p className="text-muted-foreground mb-6">Perfect for occasional travelers.</p>
@@ -54,13 +54,13 @@ const Pricing = () => {
                         <PricingFeature>Standard cancellation policy</PricingFeature>
                       </div>
                       
-                      <Link to="/register" className="w-full">
+                      <Link to="/register" className="w-full mt-auto">
                         <Button className="w-full" variant="outline">Get Started</Button>
                       </Link>
                     </div>
                     
                     {/* Premium Plan */}
-                    <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-hotel-500 flex flex-col relative">
+                    <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-hotel-500 flex flex-col h-full relative">
                       <div className="absolute top-0 right-0 bg-hotel-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
                         POPULAR
                       </div>
@@ -76,13 +76,13 @@ const Pricing = () => {
                         <PricingFeature>Early check-in when available</PricingFeature>
                       </div>
                       
-                      <Link to="/register" className="w-full">
+                      <Link to="/register" className="w-full mt-auto">
                         <Button className="w-full bg-hotel-500 hover:bg-hotel-600">Get Started</Button>
                       </Link>
                     </div>
                     
                     {/* Business Plan */}
-                    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 flex flex-col">
+                    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 flex flex-col h-full">
                       <h3 className="text-xl font-bold mb-2">Business</h3>
                       <div className="text-3xl font-bold mb-4">$49.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                       <p className="text-muted-foreground mb-6">For business travelers and teams.</p>
@@ -96,7 +96,7 @@ const Pricing = () => {
                         <PricingFeature>Corporate billing options</PricingFeature>
                       </div>
                       
-                      <Link to="/register" className="w-full">
+                      <Link to="/register" className="w-full mt-auto">
                         <Button className="w-full" variant="outline">Get Started</Button>
                       </Link>
                     </div>
@@ -105,8 +105,8 @@ const Pricing = () => {
                 
                 <TabsContent value="yearly" className="mt-4">
                   <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                    {/* Basic Plan */}
-                    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 flex flex-col">
+                    {/* Yearly Basic Plan */}
+                    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 flex flex-col h-full">
                       <h3 className="text-xl font-bold mb-2">Basic</h3>
                       <div className="text-3xl font-bold mb-4">$95.88<span className="text-sm font-normal text-muted-foreground">/year</span></div>
                       <p className="text-muted-foreground mb-2">Perfect for occasional travelers.</p>
@@ -118,13 +118,13 @@ const Pricing = () => {
                         <PricingFeature>Standard cancellation policy</PricingFeature>
                       </div>
                       
-                      <Link to="/register" className="w-full">
+                      <Link to="/register" className="w-full mt-auto">
                         <Button className="w-full" variant="outline">Get Started</Button>
                       </Link>
                     </div>
                     
-                    {/* Premium Plan */}
-                    <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-hotel-500 flex flex-col relative">
+                    {/* Yearly Premium Plan */}
+                    <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-hotel-500 flex flex-col h-full relative">
                       <div className="absolute top-0 right-0 bg-hotel-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
                         POPULAR
                       </div>
@@ -141,13 +141,13 @@ const Pricing = () => {
                         <PricingFeature>Early check-in when available</PricingFeature>
                       </div>
                       
-                      <Link to="/register" className="w-full">
+                      <Link to="/register" className="w-full mt-auto">
                         <Button className="w-full bg-hotel-500 hover:bg-hotel-600">Get Started</Button>
                       </Link>
                     </div>
                     
-                    {/* Business Plan */}
-                    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 flex flex-col">
+                    {/* Yearly Business Plan */}
+                    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 flex flex-col h-full">
                       <h3 className="text-xl font-bold mb-2">Business</h3>
                       <div className="text-3xl font-bold mb-4">$479.88<span className="text-sm font-normal text-muted-foreground">/year</span></div>
                       <p className="text-muted-foreground mb-2">For business travelers and teams.</p>
@@ -162,7 +162,7 @@ const Pricing = () => {
                         <PricingFeature>Corporate billing options</PricingFeature>
                       </div>
                       
-                      <Link to="/register" className="w-full">
+                      <Link to="/register" className="w-full mt-auto">
                         <Button className="w-full" variant="outline">Get Started</Button>
                       </Link>
                     </div>

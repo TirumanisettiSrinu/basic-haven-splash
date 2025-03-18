@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
 import { hotelAPI } from '@/services/api';
 import { Hotel } from '@/types';
 import Navbar from '@/components/Navbar';
@@ -11,27 +12,56 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Hotels = () => {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  
   const [searchParams, setSearchParams] = useState({
-    city: '',
+    city: queryParams.get('city') || '',
     checkIn: null,
     checkOut: null,
-    guests: 1
+    guests: Number(queryParams.get('guests')) || 1,
+    minPrice: Number(queryParams.get('minPrice')) || 0,
+    maxPrice: Number(queryParams.get('maxPrice')) || 1000
   });
 
-  const { data: hotels, isLoading, error } = useQuery({
+  const { data: allHotels, isLoading, error } = useQuery({
     queryKey: ['hotels'],
     queryFn: hotelAPI.getAllHotels,
   });
+
+  // Filter hotels based on search criteria (primarily city)
+  const hotels = allHotels ? allHotels.filter((hotel: Hotel) => {
+    if (searchParams.city && hotel.city) {
+      return hotel.city.toLowerCase().includes(searchParams.city.toLowerCase());
+    }
+    return true;
+  }) : [];
 
   useEffect(() => {
     if (error) {
       toast.error('Failed to fetch hotels. Please try again later.');
     }
-  }, [error]);
+    
+    // Update search params from URL when location changes
+    const city = queryParams.get('city');
+    const guests = queryParams.get('guests');
+    const minPrice = queryParams.get('minPrice');
+    const maxPrice = queryParams.get('maxPrice');
+    
+    if (city || guests || minPrice || maxPrice) {
+      setSearchParams({
+        city: city || '',
+        checkIn: null,
+        checkOut: null,
+        guests: Number(guests) || 1,
+        minPrice: Number(minPrice) || 0,
+        maxPrice: Number(maxPrice) || 1000
+      });
+    }
+  }, [error, location.search, queryParams]);
 
   const handleSearch = (searchCriteria: any) => {
     setSearchParams(searchCriteria);
-    // In a full implementation, this would trigger a filtered search
   };
 
   return (
@@ -59,7 +89,11 @@ const Hotels = () => {
         {/* Hotels List */}
         <section className="py-12 md:py-16">
           <div className="container-custom">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8">Available Hotels</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-8">
+              {searchParams.city 
+                ? `Hotels in ${searchParams.city}` 
+                : "Available Hotels"}
+            </h2>
             
             {isLoading ? (
               <div className="flex justify-center py-12">
