@@ -76,10 +76,6 @@ export interface Worker {
   assignedRooms: {
     roomId: string;
   }[];
-  cleanedRooms?: {
-    roomId: string;
-    cleanedAt: Date;
-  }[];
   createdAt?: Date;
   updatedAt?: Date;
 }

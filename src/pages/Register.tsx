@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 const Register = () => {
   const { register, state } = useAuth();
-  const { isAuthenticated, loading, error, backendAvailable } = state;
+  const { isAuthenticated, loading, error } = state;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -30,7 +30,6 @@ const Register = () => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
-  const [formSubmitted, setFormSubmitted] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -140,20 +139,11 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted');
-    setFormSubmitted(true);
     
     if (!validateForm()) {
-      console.log('Form validation failed', formErrors);
       return;
     }
     
-    if (!backendAvailable) {
-      console.error('Backend not available');
-      return;
-    }
-
-    console.log('Sending registration data');
     const { confirmPassword, ...userData } = formData;
     await register(userData);
   };
@@ -168,15 +158,6 @@ const Register = () => {
       
       <main className="flex-grow flex items-center justify-center py-16 px-4 bg-gray-50">
         <div className="w-full max-w-lg animate-fade-in-up">
-          {!backendAvailable && (
-            <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md shadow text-center">
-              <p className="font-medium">Backend server is not available</p>
-              <p className="text-sm mt-1">
-                Please ensure the backend server is running at http://localhost:8000
-              </p>
-            </div>
-          )}
-          
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             {/* Header */}
             <div className="p-6 bg-hotel-500 text-white text-center">
@@ -190,12 +171,6 @@ const Register = () => {
               {error && (
                 <div className="p-3 rounded-md bg-red-50 text-red-500 text-sm">
                   {error}
-                </div>
-              )}
-              
-              {formSubmitted && Object.keys(formErrors).length > 0 && (
-                <div className="p-3 rounded-md bg-amber-50 text-amber-700 text-sm">
-                  Please fix the errors in the form before submitting.
                 </div>
               )}
               
@@ -393,7 +368,7 @@ const Register = () => {
               <Button
                 type="submit"
                 className="w-full bg-hotel-500 hover:bg-hotel-600 mt-6"
-                disabled={loading || !backendAvailable}
+                disabled={loading}
               >
                 {loading ? "Creating Account..." : "Create Account"}
               </Button>

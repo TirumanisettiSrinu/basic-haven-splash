@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { Hotel, Room, User, Booking, SearchCriteria, Worker, Moderator } from '@/types';
 
@@ -28,8 +29,6 @@ api.interceptors.request.use(
 
 // Helper function to handle API errors
 const handleApiError = (error: any) => {
-  console.error('API Error:', error);
-  
   if (error.code === 'ERR_NETWORK') {
     console.error('Network error: Cannot connect to the backend server');
     return { 
@@ -41,7 +40,6 @@ const handleApiError = (error: any) => {
   if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
-    console.error('Response error:', error.response.data);
     return { 
       error: true,
       message: error.response.data?.message || 'Server error',
@@ -49,14 +47,12 @@ const handleApiError = (error: any) => {
     };
   } else if (error.request) {
     // The request was made but no response was received
-    console.error('Request error:', error.request);
     return { 
       error: true,
       message: 'No response from server. Please try again later.',
     };
   } else {
     // Something happened in setting up the request that triggered an Error
-    console.error('Error message:', error.message);
     return { 
       error: true,
       message: error.message || 'An unknown error occurred',
@@ -68,55 +64,31 @@ const handleApiError = (error: any) => {
 export const authAPI = {
   login: async (email: string, password: string) => {
     try {
-      console.log('Attempting login with:', { email });
       const response = await api.post('/auth/login', { email, password });
-      console.log('Login response:', response.data);
-      
-      if (response.data && response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        return response.data;
-      } else {
-        throw new Error('Invalid response format: missing token');
-      }
+      localStorage.setItem('token', response.data.token);
+      return response.data;
     } catch (error) {
-      console.error('Login error:', error);
       throw handleApiError(error);
     }
   },
-  
   register: async (userData: Partial<User>) => {
     try {
-      console.log('Attempting registration with:', { ...userData, password: '***' });
       const response = await api.post('/auth/register', userData);
-      console.log('Register response:', response.data);
-      
-      if (response.data && response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        return response.data;
-      } else {
-        throw new Error('Invalid response format: missing token');
-      }
+      return response.data;
     } catch (error) {
-      console.error('Registration error:', error);
       throw handleApiError(error);
     }
   },
-  
   logout: () => {
-    console.log('Logging out user');
     localStorage.removeItem('token');
     // Redirect to homepage when logging out
     window.location.href = '/';
   },
-  
   getCurrentUser: async () => {
     try {
-      console.log('Fetching current user');
       const response = await api.get('/auth/me');
-      console.log('Current user response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Get current user error:', error);
       throw handleApiError(error);
     }
   },
@@ -468,4 +440,3 @@ export const checkBackendConnection = async () => {
 };
 
 export default api;
-

@@ -91,23 +91,18 @@ const authReducer = (state: typeof initialState, action: AuthAction): typeof ini
 // Provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Check backend connection status
   useEffect(() => {
     const checkConnection = async () => {
-      console.log('Checking backend connection...');
       const isConnected = await checkBackendConnection();
       dispatch({ type: 'BACKEND_STATUS', payload: isConnected });
       
       if (!isConnected) {
-        console.error('Backend connection failed');
         toast.error(
           'Cannot connect to the backend server. Please ensure it is running at http://localhost:8000',
           { duration: 6000 }
         );
-      } else {
-        console.log('Backend connection successful');
       }
     };
     
@@ -122,33 +117,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const verifyUser = async () => {
       const token = localStorage.getItem('token');
-      if (!token) {
-        setCheckingAuth(false);
-        return;
-      }
+      if (!token) return;
 
       try {
-        console.log('Verifying user token...');
         dispatch({ type: 'LOGIN_START' });
         const user = await authAPI.getCurrentUser();
-        console.log('User verified:', user);
         dispatch({ type: 'LOGIN_SUCCESS', payload: user });
       } catch (error: any) {
-        console.error('Token verification failed:', error);
         localStorage.removeItem('token');
         dispatch({ 
           type: 'LOGIN_FAILURE', 
           payload: error.message || 'Session expired. Please log in again.' 
         });
-      } finally {
-        setCheckingAuth(false);
       }
     };
 
     if (state.backendAvailable) {
       verifyUser();
-    } else {
-      setCheckingAuth(false);
     }
   }, [state.backendAvailable]);
 
@@ -161,13 +146,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     dispatch({ type: 'LOGIN_START' });
     try {
-      console.log('Login attempt for:', email);
       const data = await authAPI.login(email, password);
-      console.log('Login successful:', data);
       dispatch({ type: 'LOGIN_SUCCESS', payload: data.user });
       toast.success('Logged in successfully');
     } catch (error: any) {
-      console.error('Login failed:', error);
       dispatch({ 
         type: 'LOGIN_FAILURE', 
         payload: error.message || 'Failed to login' 
@@ -185,13 +167,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     dispatch({ type: 'REGISTER_START' });
     try {
-      console.log('Registration attempt for:', userData.email);
       const data = await authAPI.register(userData);
-      console.log('Registration successful:', data);
       dispatch({ type: 'REGISTER_SUCCESS', payload: data.user });
       toast.success('Registered successfully');
     } catch (error: any) {
-      console.error('Registration failed:', error);
       dispatch({ 
         type: 'REGISTER_FAILURE', 
         payload: error.message || 'Failed to register' 
@@ -206,12 +185,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'LOGOUT' });
     toast.success('Logged out successfully');
   };
-
-  // Show loading indicator while checking authentication status
-  if (checkingAuth && state.backendAvailable) {
-    // Can return a loading indicator here if needed
-    console.log('Checking authentication status...');
-  }
 
   return (
     <AuthContext.Provider value={{ state, dispatch, login, register, logout }}>

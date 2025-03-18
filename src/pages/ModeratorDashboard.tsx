@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -86,27 +87,33 @@ const ModeratorDashboard = () => {
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
 
+  // Query to get moderator data
   const { data: moderatorData, isLoading: isModeratorLoading } = useQuery({
     queryKey: ['moderator', user?._id],
     queryFn: async () => {
+      // First get all moderators
       const allModerators = await moderatorAPI.getAllModerators();
+      // Then find the moderator with matching userId
       return allModerators.find((m: Moderator) => m.userId === user?._id) || null;
     },
     enabled: !!user?._id,
   });
 
+  // Query to get hotel data for the moderator
   const { data: hotel, isLoading: isHotelLoading } = useQuery({
     queryKey: ['moderator-hotel', moderatorData?.hotelId],
     queryFn: () => hotelAPI.getHotelById(moderatorData?.hotelId as string),
     enabled: !!moderatorData?.hotelId,
   });
 
+  // Query to get rooms for the hotel
   const { data: rooms, isLoading: isRoomsLoading } = useQuery({
     queryKey: ['hotel-rooms', moderatorData?.hotelId],
     queryFn: () => roomAPI.getRoomsForHotel(moderatorData?.hotelId as string),
     enabled: !!moderatorData?.hotelId,
   });
 
+  // Query to get workers for the hotel
   const { data: workers, isLoading: isWorkersLoading } = useQuery({
     queryKey: ['hotel-workers', moderatorData?.hotelId],
     queryFn: async () => {
@@ -116,6 +123,7 @@ const ModeratorDashboard = () => {
     enabled: !!moderatorData?.hotelId,
   });
 
+  // Form for adding a new worker
   const form = useForm<WorkerFormValues>({
     resolver: zodResolver(workerSchema),
     defaultValues: {
@@ -129,6 +137,7 @@ const ModeratorDashboard = () => {
     },
   });
 
+  // Form for editing an existing worker
   const editForm = useForm<WorkerFormValues>({
     resolver: zodResolver(workerSchema),
     defaultValues: {
@@ -142,6 +151,7 @@ const ModeratorDashboard = () => {
     },
   });
 
+  // Mutation to create a new worker
   const createWorkerMutation = useMutation({
     mutationFn: workerAPI.createWorker,
     onSuccess: () => {
@@ -155,6 +165,7 @@ const ModeratorDashboard = () => {
     }
   });
 
+  // Mutation to update an existing worker
   const updateWorkerMutation = useMutation({
     mutationFn: (data: { id: string, workerData: Partial<Worker> }) => 
       workerAPI.updateWorker(data.id, data.workerData),
@@ -168,6 +179,7 @@ const ModeratorDashboard = () => {
     }
   });
 
+  // Mutation to delete a worker
   const deleteWorkerMutation = useMutation({
     mutationFn: workerAPI.deleteWorker,
     onSuccess: () => {
@@ -180,41 +192,35 @@ const ModeratorDashboard = () => {
     }
   });
 
+  // Handler for creating a new worker
   const onAddWorkerSubmit = (data: WorkerFormValues) => {
-    const assignedRooms = data.assignedRooms?.map(room => ({
-      roomId: room.roomId || ''
-    })) || [];
-
     createWorkerMutation.mutate({
       ...data,
       userId: user?._id as string,
-      assignedRooms: assignedRooms
     });
   };
 
+  // Handler for updating an existing worker
   const onEditWorkerSubmit = (data: WorkerFormValues) => {
     if (selectedWorker?._id) {
-      const assignedRooms = data.assignedRooms?.map(room => ({
-        roomId: room.roomId || ''
-      })) || [];
-
       updateWorkerMutation.mutate({
         id: selectedWorker._id as string,
         workerData: {
           ...data,
           userId: selectedWorker.userId,
-          assignedRooms: assignedRooms
         },
       });
     }
   };
 
+  // Handler for deleting a worker
   const handleDeleteWorker = () => {
     if (selectedWorker?._id) {
       deleteWorkerMutation.mutate(selectedWorker._id as string);
     }
   };
 
+  // Handler for editing a worker
   const handleEditWorker = (worker: Worker) => {
     setSelectedWorker(worker);
     editForm.reset({
@@ -286,6 +292,7 @@ const ModeratorDashboard = () => {
             </TabsList>
             
             <TabsContent value="overview" className="space-y-6">
+              {/* Hotel Information Card */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -329,6 +336,7 @@ const ModeratorDashboard = () => {
                 </CardContent>
               </Card>
               
+              {/* Statistics Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
                   <CardHeader className="pb-2">
@@ -532,6 +540,7 @@ const ModeratorDashboard = () => {
                                 variant="outline" 
                                 size="sm" 
                                 onClick={() => {
+                                  // Toggle room cleaning status
                                   roomAPI.toggleRoomCleaningStatus(room._id as string, !room.isCleaned)
                                     .then(() => {
                                       queryClient.invalidateQueries({ queryKey: ['hotel-rooms'] });
@@ -567,6 +576,7 @@ const ModeratorDashboard = () => {
       
       <Footer />
       
+      {/* Add Worker Dialog */}
       <Dialog open={isAddWorkerDialogOpen} onOpenChange={setIsAddWorkerDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -717,6 +727,7 @@ const ModeratorDashboard = () => {
         </DialogContent>
       </Dialog>
       
+      {/* Edit Worker Dialog */}
       <Dialog open={isEditWorkerDialogOpen} onOpenChange={setIsEditWorkerDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -842,6 +853,7 @@ const ModeratorDashboard = () => {
         </DialogContent>
       </Dialog>
       
+      {/* Delete Worker Dialog */}
       <Dialog open={isDeleteWorkerDialogOpen} onOpenChange={setIsDeleteWorkerDialogOpen}>
         <DialogContent>
           <DialogHeader>
