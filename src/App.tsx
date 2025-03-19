@@ -18,67 +18,74 @@ import About from "./pages/About";
 
 // Import missing but needed modules
 import axios from "axios";
+import { createRoot } from 'react-dom/client';
+import React from 'react';
 
-// Create a query client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
+// Create a query client - move inside the component to fix hooks error
+const App = () => {
+  // Create a query client inside the component
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        refetchOnWindowFocus: false,
+      },
     },
-  },
-});
+  });
 
-// Mock API for development
-const setupMockAPI = () => {
-  axios.interceptors.request.use(
-    async (config) => {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Mock successful response based on endpoint
-      console.log("API Request:", config.url);
-      return config;
-    },
-    (error) => {
-      return Promise.reject(error);
-    }
+  // Mock API for development
+  const setupMockAPI = () => {
+    axios.interceptors.request.use(
+      async (config) => {
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Mock successful response based on endpoint
+        console.log("API Request:", config.url);
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+  };
+
+  // Initialize mock API in development environment
+  React.useEffect(() => {
+    setupMockAPI();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner position="top-right" />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/dashboard" element={<UserDashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/moderator" element={<ModeratorDashboard />} />
+              
+              {/* Hotel routes */}
+              <Route path="/hotels" element={<Hotels />} />
+              <Route path="/hotels/:id" element={<HotelDetail />} />
+              
+              {/* Other routes */}
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/about" element={<About />} />
+              
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 };
-
-// Initialize mock API in development environment
-setupMockAPI();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner position="top-right" />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<UserDashboard />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/moderator" element={<ModeratorDashboard />} />
-            
-            {/* Hotel routes */}
-            <Route path="/hotels" element={<Hotels />} />
-            <Route path="/hotels/:id" element={<HotelDetail />} />
-            
-            {/* Other routes */}
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/about" element={<About />} />
-            
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
 
 export default App;

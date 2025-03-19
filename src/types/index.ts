@@ -91,10 +91,14 @@ export interface Booking {
   totalPrice: number;
   status: 'active' | 'cancelled' | 'completed' | 'confirmed';
   createdAt?: Date;
+  updatedAt?: Date;
   receipt?: {
     issueDate: Date;
     receiptNumber: string;
   };
+  // Add hotel and room objects for convenience in UI
+  hotel?: Hotel;
+  room?: Room;
 }
 
 export interface AuthState {
