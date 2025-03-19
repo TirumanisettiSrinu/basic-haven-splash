@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { MapPin } from 'lucide-react';
+import { MapPin, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Booking } from '@/types';
+import BookingReceipt from './BookingReceipt';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 interface BookingItemProps {
   booking: Booking;
@@ -19,13 +21,12 @@ const formatDate = (dateString: string | Date) => {
 };
 
 const BookingItem: React.FC<BookingItemProps> = ({ booking, onCancel, isDateInFuture }) => {
+  const [showReceipt, setShowReceipt] = useState(false);
   const hotel = booking.hotel || { name: 'Unknown Hotel', city: 'Unknown Location', photos: [] };
   const room = booking.room || { title: 'Standard Room', maxPeople: 2 };
   
   return (
-    <div 
-      className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow animate-fade-in-up"
-    >
+    <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow animate-fade-in-up">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         {/* Image */}
         <div className="md:col-span-3 aspect-[4/3] overflow-hidden bg-gray-100 flex items-center justify-center">
@@ -67,13 +68,20 @@ const BookingItem: React.FC<BookingItemProps> = ({ booking, onCancel, isDateInFu
             </p>
           </div>
           
-          <div className="mt-auto pt-2">
+          <div className="mt-auto pt-2 flex space-x-4">
             <Link 
               to={`/hotels/${booking.hotelId}`}
               className="text-hotel-500 hover:text-hotel-600 text-sm font-medium"
             >
               View Hotel
             </Link>
+            <button 
+              onClick={() => setShowReceipt(true)}
+              className="text-gray-500 hover:text-gray-800 text-sm font-medium flex items-center"
+            >
+              <FileText className="h-3 w-3 mr-1" />
+              View Receipt
+            </button>
           </div>
         </div>
         
@@ -119,6 +127,17 @@ const BookingItem: React.FC<BookingItemProps> = ({ booking, onCancel, isDateInFu
           </div>
         </div>
       </div>
+      
+      {/* Receipt Dialog */}
+      {showReceipt && (
+        <BookingReceipt 
+          booking={booking}
+          hotel={hotel}
+          room={room}
+          open={showReceipt}
+          onClose={() => setShowReceipt(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -48,7 +47,7 @@ const Pricing = () => {
                       <div className="text-3xl font-bold mb-4">$9.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                       <p className="text-muted-foreground mb-6">Perfect for occasional travelers.</p>
                       
-                      <div className="mb-6 flex-grow">
+                      <div className="mb-6 flex-grow space-y-4">
                         <PricingFeature>5 bookings per month</PricingFeature>
                         <PricingFeature>Basic customer support</PricingFeature>
                         <PricingFeature>Standard cancellation policy</PricingFeature>
@@ -68,7 +67,7 @@ const Pricing = () => {
                       <div className="text-3xl font-bold mb-4">$19.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                       <p className="text-muted-foreground mb-6">Ideal for regular travelers and families.</p>
                       
-                      <div className="mb-6 flex-grow">
+                      <div className="mb-6 flex-grow space-y-4">
                         <PricingFeature>Unlimited bookings</PricingFeature>
                         <PricingFeature>Priority customer support</PricingFeature>
                         <PricingFeature>Flexible cancellation policy</PricingFeature>
@@ -87,7 +86,7 @@ const Pricing = () => {
                       <div className="text-3xl font-bold mb-4">$49.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                       <p className="text-muted-foreground mb-6">For business travelers and teams.</p>
                       
-                      <div className="mb-6 flex-grow">
+                      <div className="mb-6 flex-grow space-y-4">
                         <PricingFeature>Unlimited bookings</PricingFeature>
                         <PricingFeature>24/7 dedicated support</PricingFeature>
                         <PricingFeature>Free cancellation anytime</PricingFeature>
@@ -112,7 +111,7 @@ const Pricing = () => {
                       <p className="text-muted-foreground mb-2">Perfect for occasional travelers.</p>
                       <p className="text-green-600 font-medium mb-6">Save $23.97</p>
                       
-                      <div className="mb-6 flex-grow">
+                      <div className="mb-6 flex-grow space-y-4">
                         <PricingFeature>5 bookings per month</PricingFeature>
                         <PricingFeature>Basic customer support</PricingFeature>
                         <PricingFeature>Standard cancellation policy</PricingFeature>
@@ -133,7 +132,7 @@ const Pricing = () => {
                       <p className="text-muted-foreground mb-2">Ideal for regular travelers and families.</p>
                       <p className="text-green-600 font-medium mb-6">Save $47.94</p>
                       
-                      <div className="mb-6 flex-grow">
+                      <div className="mb-6 flex-grow space-y-4">
                         <PricingFeature>Unlimited bookings</PricingFeature>
                         <PricingFeature>Priority customer support</PricingFeature>
                         <PricingFeature>Flexible cancellation policy</PricingFeature>
@@ -153,7 +152,7 @@ const Pricing = () => {
                       <p className="text-muted-foreground mb-2">For business travelers and teams.</p>
                       <p className="text-green-600 font-medium mb-6">Save $119.97</p>
                       
-                      <div className="mb-6 flex-grow">
+                      <div className="mb-6 flex-grow space-y-4">
                         <PricingFeature>Unlimited bookings</PricingFeature>
                         <PricingFeature>24/7 dedicated support</PricingFeature>
                         <PricingFeature>Free cancellation anytime</PricingFeature>

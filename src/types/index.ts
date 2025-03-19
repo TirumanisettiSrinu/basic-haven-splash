@@ -25,6 +25,8 @@ export interface Room {
   isCleaned: boolean;
   isAssigned: boolean;
   bookedBy: string | null;
+  hotelId?: string; // Reference to the hotel this room belongs to
+  hotel?: Hotel; // The actual hotel object for UI convenience
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -60,6 +62,8 @@ export interface Moderator {
     canViewBookings: boolean;
   };
   assignedHotels?: string[];
+  user?: User; // The actual user object for UI convenience
+  hotel?: Hotel; // The actual hotel object for UI convenience
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -76,6 +80,8 @@ export interface Worker {
   assignedRooms: {
     roomId: string;
   }[];
+  user?: User; // The actual user object for UI convenience
+  hotel?: Hotel; // The actual hotel object for UI convenience
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -99,6 +105,7 @@ export interface Booking {
   // Add hotel and room objects for convenience in UI
   hotel?: Hotel;
   room?: Room;
+  user?: User;
 }
 
 export interface AuthState {
