@@ -156,7 +156,11 @@ const AdminModerators = () => {
     createModeratorMutation.mutate({
       userId: data.userId,
       hotelId: data.hotelId,
-      permissions: data.permissions,
+      permissions: {
+        canManageWorkers: data.permissions.canManageWorkers,
+        canManageRooms: data.permissions.canManageRooms,
+        canViewBookings: data.permissions.canViewBookings,
+      },
       isActive: data.isActive,
     });
   };
@@ -167,7 +171,11 @@ const AdminModerators = () => {
         id: selectedModerator._id,
         moderatorData: {
           hotelId: data.hotelId,
-          permissions: data.permissions,
+          permissions: {
+            canManageWorkers: data.permissions.canManageWorkers,
+            canManageRooms: data.permissions.canManageRooms,
+            canViewBookings: data.permissions.canViewBookings,
+          },
           isActive: data.isActive,
         },
       });
