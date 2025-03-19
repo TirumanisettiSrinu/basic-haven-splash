@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -28,21 +29,26 @@ const WorkerDashboard = () => {
 
   const [activeTab, setActiveTab] = useState<'assigned' | 'cleaned' | 'needs-cleaning'>('assigned');
 
+  // Query to get worker data
   const { data: workerData, isLoading: isWorkerLoading } = useQuery({
     queryKey: ['worker', user?._id],
     queryFn: async () => {
+      // First get all workers
       const allWorkers = await workerAPI.getAllWorkers();
+      // Then find the worker with matching userId
       return allWorkers.find((w: Worker) => w.userId === user?._id) || null;
     },
     enabled: !!user?._id,
   });
 
+  // Query to get hotel data
   const { data: hotel, isLoading: isHotelLoading } = useQuery({
     queryKey: ['hotel', workerData?.hotelId],
     queryFn: () => hotelAPI.getHotelById(workerData?.hotelId as string),
     enabled: !!workerData?.hotelId,
   });
 
+  // Query to get room data for assigned rooms
   const { data: assignedRooms, isLoading: isRoomsLoading } = useQuery({
     queryKey: ['assigned-rooms', workerData?.hotelId],
     queryFn: async () => {
@@ -50,12 +56,14 @@ const WorkerDashboard = () => {
       
       const hotelRooms = await roomAPI.getRoomsForHotel(workerData.hotelId);
       
+      // Filter to only include assigned rooms
       const assignedRoomIds = workerData.assignedRooms.map(r => r.roomId);
       return hotelRooms.filter((room: Room) => assignedRoomIds.includes(room._id as string));
     },
     enabled: !!workerData?.hotelId && !!workerData?.assignedRooms?.length,
   });
 
+  // Mutation to mark a room as cleaned
   const markRoomAsCleanedMutation = useMutation({
     mutationFn: ({ workerId, roomId }: { workerId: string, roomId: string }) => 
       workerAPI.markRoomAsCleaned(workerId, roomId),
@@ -77,6 +85,7 @@ const WorkerDashboard = () => {
     }
   };
 
+  // Get filtered rooms based on the active tab
   const getFilteredRooms = () => {
     if (!assignedRooms) return [];
     
@@ -292,7 +301,7 @@ const WorkerDashboard = () => {
                           </TableCell>
                           <TableCell className="font-medium">{room.title}</TableCell>
                           <TableCell>
-                            <Badge variant={room.isCleaned ? "default" : "destructive"} className={`${
+                            <Badge variant={room.isCleaned ? "success" : "destructive"} className={`${
                               room.isCleaned ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                             }`}>
                               {room.isCleaned ? 'Cleaned' : 'Needs Cleaning'}

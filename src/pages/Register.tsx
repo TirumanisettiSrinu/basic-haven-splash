@@ -5,16 +5,15 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Hotel, Eye, EyeOff, Check, AlertCircle, Info } from 'lucide-react';
+import { Hotel, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { cn } from '@/lib/utils';
 
 const Register = () => {
-  const { register, state, enableMockMode } = useAuth();
-  const { isAuthenticated, loading, error, backendAvailable, mockMode } = state;
+  const { register, state } = useAuth();
+  const { isAuthenticated, loading, error } = state;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -31,8 +30,6 @@ const Register = () => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
-  const [formSubmitted, setFormSubmitted] = useState(false);
-  const [tryingMockMode, setTryingMockMode] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -142,37 +139,17 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted');
-    setFormSubmitted(true);
     
     if (!validateForm()) {
-      console.log('Form validation failed', formErrors);
       return;
     }
-
-    console.log('Sending registration data');
+    
     const { confirmPassword, ...userData } = formData;
     await register(userData);
   };
 
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
-  };
-  
-  const handleUseMockMode = () => {
-    setTryingMockMode(true);
-    enableMockMode();
-    
-    // Prefill the form with sample data
-    setFormData({
-      username: 'newuser',
-      email: 'newuser@example.com',
-      password: 'Password123',
-      confirmPassword: 'Password123',
-      country: 'United States',
-      city: 'New York',
-      phone: '',
-    });
   };
 
   return (
@@ -181,33 +158,6 @@ const Register = () => {
       
       <main className="flex-grow flex items-center justify-center py-16 px-4 bg-gray-50">
         <div className="w-full max-w-lg animate-fade-in-up">
-          {!backendAvailable && !mockMode && !tryingMockMode && (
-            <Alert variant="warning" className="mb-6 animate-fadeIn">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Backend Connection Failed</AlertTitle>
-              <AlertDescription>
-                Cannot connect to the backend server. 
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto text-blue-600 font-semibold ml-1"
-                  onClick={handleUseMockMode}
-                >
-                  Use demo mode instead
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          {mockMode && (
-            <Alert variant="info" className="mb-6 animate-fadeIn">
-              <Info className="h-4 w-4" />
-              <AlertTitle>Demo Mode Active</AlertTitle>
-              <AlertDescription>
-                You're using demo mode with sample data. Your registration will be processed locally.
-              </AlertDescription>
-            </Alert>
-          )}
-          
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             {/* Header */}
             <div className="p-6 bg-hotel-500 text-white text-center">
@@ -221,12 +171,6 @@ const Register = () => {
               {error && (
                 <div className="p-3 rounded-md bg-red-50 text-red-500 text-sm">
                   {error}
-                </div>
-              )}
-              
-              {formSubmitted && Object.keys(formErrors).length > 0 && (
-                <div className="p-3 rounded-md bg-amber-50 text-amber-700 text-sm">
-                  Please fix the errors in the form before submitting.
                 </div>
               )}
               

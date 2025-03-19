@@ -39,7 +39,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, PencilIcon, Plus, Trash2, AlertCircle, Shield } from 'lucide-react';
+import { Loader2, PencilIcon, Plus, Trash2, AlertCircle, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 
@@ -51,7 +51,6 @@ const moderatorSchema = z.object({
     canManageRooms: z.boolean().default(true),
     canViewBookings: z.boolean().default(true),
   }),
-  isActive: z.boolean().default(true),
 });
 
 type ModeratorFormValues = z.infer<typeof moderatorSchema>;
@@ -73,7 +72,6 @@ const AdminModerators = () => {
         canManageRooms: true,
         canViewBookings: true,
       },
-      isActive: true,
     },
   });
 
@@ -87,34 +85,29 @@ const AdminModerators = () => {
         canManageRooms: true,
         canViewBookings: true,
       },
-      isActive: true,
     },
   });
 
-  // Fetch moderators
   const { data: moderators, isLoading, error } = useQuery({
     queryKey: ['moderators'],
     queryFn: moderatorAPI.getAllModerators,
   });
 
-  // Fetch users
   const { data: users } = useQuery({
     queryKey: ['users'],
     queryFn: userAPI.getAllUsers,
   });
 
-  // Fetch hotels
   const { data: hotels } = useQuery({
     queryKey: ['hotels'],
     queryFn: hotelAPI.getAllHotels,
   });
 
-  // Create moderator mutation
   const createModeratorMutation = useMutation({
     mutationFn: moderatorAPI.createModerator,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['moderators'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] }); // Update users to reflect moderator status
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Moderator created successfully');
       setIsCreateDialogOpen(false);
       form.reset();
@@ -124,9 +117,8 @@ const AdminModerators = () => {
     }
   });
 
-  // Update moderator mutation
   const updateModeratorMutation = useMutation({
-    mutationFn: (data: { id: string, moderatorData: Partial<Moderator> }) => 
+    mutationFn: (data: { id: string, moderatorData: any }) => 
       moderatorAPI.updateModerator(data.id, data.moderatorData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['moderators'] });
@@ -138,13 +130,12 @@ const AdminModerators = () => {
     }
   });
 
-  // Delete moderator mutation
   const deleteModeratorMutation = useMutation({
     mutationFn: moderatorAPI.deleteModerator,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['moderators'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] }); // Update users to reflect moderator status
-      toast.success('Moderator removed successfully');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Moderator deleted successfully');
       setIsDeleteDialogOpen(false);
     },
     onError: (error: any) => {
@@ -156,12 +147,8 @@ const AdminModerators = () => {
     createModeratorMutation.mutate({
       userId: data.userId,
       hotelId: data.hotelId,
-      permissions: {
-        canManageWorkers: data.permissions.canManageWorkers,
-        canManageRooms: data.permissions.canManageRooms,
-        canViewBookings: data.permissions.canViewBookings,
-      },
-      isActive: data.isActive,
+      permissions: data.permissions,
+      isActive: true,
     });
   };
 
@@ -171,12 +158,7 @@ const AdminModerators = () => {
         id: selectedModerator._id,
         moderatorData: {
           hotelId: data.hotelId,
-          permissions: {
-            canManageWorkers: data.permissions.canManageWorkers,
-            canManageRooms: data.permissions.canManageRooms,
-            canViewBookings: data.permissions.canViewBookings,
-          },
-          isActive: data.isActive,
+          permissions: data.permissions,
         },
       });
     }
@@ -198,7 +180,6 @@ const AdminModerators = () => {
         canManageRooms: moderator.permissions.canManageRooms,
         canViewBookings: moderator.permissions.canViewBookings,
       },
-      isActive: moderator.isActive,
     });
     setIsEditDialogOpen(true);
   };
@@ -209,26 +190,18 @@ const AdminModerators = () => {
     return user ? user.username : 'Unknown User';
   };
 
-  const getUserEmail = (userId: string) => {
-    if (!users) return '';
-    const user = users.find((u: User) => u._id === userId);
-    return user ? user.email : '';
-  };
-
   const getHotelName = (hotelId: string) => {
     if (!hotels) return 'Unknown Hotel';
     const hotel = hotels.find((h: Hotel) => h._id === hotelId);
     return hotel ? hotel.name : 'Unknown Hotel';
   };
 
-  // Filter out users who are already moderators or admins
+  // Filter out users who are already moderators
   const getAvailableUsers = () => {
     if (!users || !moderators) return [];
     
     const moderatorUserIds = moderators.map((mod: Moderator) => mod.userId);
-    return users.filter((user: User) => 
-      !moderatorUserIds.includes(user._id as string) && !user.isAdmin
-    );
+    return users.filter((user: User) => !moderatorUserIds.includes(user._id as string));
   };
 
   if (isLoading) {
@@ -270,7 +243,6 @@ const AdminModerators = () => {
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
-              <TableHead>Email</TableHead>
               <TableHead>Assigned Hotel</TableHead>
               <TableHead>Permissions</TableHead>
               <TableHead>Status</TableHead>
@@ -281,13 +253,7 @@ const AdminModerators = () => {
             {moderators && moderators.length > 0 ? (
               moderators.map((moderator: Moderator) => (
                 <TableRow key={moderator._id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-hotel-500" />
-                      {getUserName(moderator.userId)}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getUserEmail(moderator.userId)}</TableCell>
+                  <TableCell className="font-medium">{getUserName(moderator.userId)}</TableCell>
                   <TableCell>{getHotelName(moderator.hotelId)}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
@@ -332,7 +298,7 @@ const AdminModerators = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-4">
+                <TableCell colSpan={5} className="text-center py-4">
                   No moderators found
                 </TableCell>
               </TableRow>
@@ -448,7 +414,7 @@ const AdminModerators = () => {
                           Manage Rooms
                         </FormLabel>
                         <p className="text-xs text-muted-foreground">
-                          Can manage room status and assignments
+                          Can update room status and assignments
                         </p>
                       </div>
                     </FormItem>
@@ -471,30 +437,7 @@ const AdminModerators = () => {
                           View Bookings
                         </FormLabel>
                         <p className="text-xs text-muted-foreground">
-                          Can view and manage bookings for their hotel
-                        </p>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-4">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Active Account
-                        </FormLabel>
-                        <p className="text-xs text-muted-foreground">
-                          Deactivated accounts cannot access moderator features
+                          Can view and manage bookings for their assigned hotel
                         </p>
                       </div>
                     </FormItem>
@@ -539,28 +482,17 @@ const AdminModerators = () => {
           
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
-              {/* User ID field (disabled in edit mode) */}
-              <FormField
-                control={editForm.control}
-                name="userId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>User</FormLabel>
-                    <div className="font-medium text-sm px-3 py-2 border rounded-md bg-gray-50">
-                      {getUserName(field.value)} ({getUserEmail(field.value)})
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="border p-4 rounded-md bg-muted/50">
+                <p className="font-medium">Moderator: {selectedModerator && getUserName(selectedModerator.userId)}</p>
+                <p className="text-xs text-muted-foreground mt-1">Moderator user cannot be changed</p>
+              </div>
               
-              {/* Hotel selection */}
               <FormField
                 control={editForm.control}
                 name="hotelId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Assigned Hotel</FormLabel>
+                    <FormLabel>Select Hotel</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -575,12 +507,14 @@ const AdminModerators = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormDescription>
+                      Change the hotel this moderator will manage
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              {/* Permissions */}
               <div className="space-y-3">
                 <h3 className="text-sm font-medium">Permissions</h3>
                 
@@ -623,7 +557,7 @@ const AdminModerators = () => {
                           Manage Rooms
                         </FormLabel>
                         <p className="text-xs text-muted-foreground">
-                          Can manage room status and assignments
+                          Can update room status and assignments
                         </p>
                       </div>
                     </FormItem>
@@ -646,30 +580,7 @@ const AdminModerators = () => {
                           View Bookings
                         </FormLabel>
                         <p className="text-xs text-muted-foreground">
-                          Can view and manage bookings for their hotel
-                        </p>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={editForm.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-4">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Active Account
-                        </FormLabel>
-                        <p className="text-xs text-muted-foreground">
-                          Deactivated accounts cannot access moderator features
+                          Can view and manage bookings for their assigned hotel
                         </p>
                       </div>
                     </FormItem>
@@ -709,22 +620,21 @@ const AdminModerators = () => {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remove Moderator</DialogTitle>
+            <DialogTitle>Delete Moderator</DialogTitle>
           </DialogHeader>
           
           <div className="py-4">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-center">Are you sure you want to remove this moderator?</p>
+            <p className="text-center">Are you sure you want to remove moderator access for this user?</p>
             {selectedModerator && (
               <div className="mt-4 p-4 bg-gray-50 rounded-md">
                 <p className="font-medium">Moderator Details:</p>
                 <p>User: {getUserName(selectedModerator.userId)}</p>
-                <p>Email: {getUserEmail(selectedModerator.userId)}</p>
                 <p>Hotel: {getHotelName(selectedModerator.hotelId)}</p>
               </div>
             )}
             <p className="text-red-500 text-sm mt-4 text-center">
-              This action cannot be undone. The user will lose all moderator privileges.
+              This action will remove all moderator privileges for this user.
             </p>
           </div>
           
