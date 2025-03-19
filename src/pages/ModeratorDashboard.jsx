@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -19,11 +20,12 @@ import {
   Bed,
   Check,
   X,
-  Calendar
+  Calendar,
+  Eye,
+  Briefcase
 } from 'lucide-react';
 import { hotelAPI, roomAPI, userAPI, workerAPI, bookingAPI } from '@/services/api';
 import { toast } from 'sonner';
-import { Hotel as HotelType, Room as RoomType, User as UserType, Worker, Booking } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const ModeratorDashboard = () => {
@@ -32,15 +34,16 @@ const ModeratorDashboard = () => {
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [hotels, setHotels] = useState<HotelType[]>([]);
-  const [rooms, setRooms] = useState<RoomType[]>([]);
-  const [workers, setWorkers] = useState<Worker[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [hotels, setHotels] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [workers, setWorkers] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  // Worker state
   const [isWorkerDialogOpen, setIsWorkerDialogOpen] = useState(false);
-  const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
-  const [workerFormData, setWorkerFormData] = useState<Partial<Worker>>({
+  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [workerFormData, setWorkerFormData] = useState({
     name: '',
     role: '',
     hotelId: '',
@@ -51,6 +54,20 @@ const ModeratorDashboard = () => {
     assignedRooms: []
   });
   
+  // Room state
+  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [roomFormData, setRoomFormData] = useState({
+    title: '',
+    price: 0,
+    maxPeople: 1,
+    desc: '',
+    hotelId: '',
+    roomNumbers: []
+  });
+  const [roomNumberInput, setRoomNumberInput] = useState('');
+
+  // Load dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -69,7 +86,7 @@ const ModeratorDashboard = () => {
           setWorkers(workersData);
         }
         
-        let allRooms: RoomType[] = [];
+        let allRooms = [];
         
         for (const hotel of hotelsData) {
           if (hotel._id) {
@@ -92,12 +109,13 @@ const ModeratorDashboard = () => {
     fetchDashboardData();
   }, []);
   
-  const handleWorkerInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
+  // Worker form handlers
+  const handleWorkerInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
     
     setWorkerFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
   
@@ -116,7 +134,7 @@ const ModeratorDashboard = () => {
     setIsWorkerDialogOpen(true);
   };
   
-  const handleEditWorker = (worker: Worker) => {
+  const handleEditWorker = (worker) => {
     setSelectedWorker(worker);
     setWorkerFormData({
       name: worker.name,
@@ -131,17 +149,17 @@ const ModeratorDashboard = () => {
     setIsWorkerDialogOpen(true);
   };
   
-  const handleSubmitWorkerForm = async (e: React.FormEvent) => {
+  const handleSubmitWorkerForm = async (e) => {
     e.preventDefault();
     
     try {
       if (selectedWorker) {
         const updatedWorker = await workerAPI.updateWorker(selectedWorker._id || '', workerFormData);
-        setWorkers(workers.map(w => w._id === selectedWorker._id ? updatedWorker as Worker : w));
+        setWorkers(workers.map(w => w._id === selectedWorker._id ? updatedWorker : w));
         toast.success('Worker updated successfully');
       } else {
         const newWorker = await workerAPI.createWorker(workerFormData);
-        setWorkers([...workers, newWorker as Worker]);
+        setWorkers([...workers, newWorker]);
         toast.success('Worker added successfully');
       }
       
@@ -152,7 +170,7 @@ const ModeratorDashboard = () => {
     }
   };
   
-  const handleDeleteWorker = async (workerId: string) => {
+  const handleDeleteWorker = async (workerId) => {
     try {
       await workerAPI.deleteWorker(workerId);
       setWorkers(workers.filter(w => w._id !== workerId));
@@ -163,13 +181,119 @@ const ModeratorDashboard = () => {
     }
   };
   
-  const handleToggleRoomCleaned = async (room: RoomType) => {
+  // Room form handlers
+  const handleRoomInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    setRoomFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' 
+        ? checked 
+        : type === 'number' 
+          ? Number(value) 
+          : value
+    }));
+  };
+  
+  const handleAddRoom = () => {
+    setSelectedRoom(null);
+    setRoomFormData({
+      title: '',
+      price: 0,
+      maxPeople: 1,
+      desc: '',
+      hotelId: hotels.length > 0 ? hotels[0]._id || '' : '',
+      roomNumbers: []
+    });
+    setRoomNumberInput('');
+    setIsRoomDialogOpen(true);
+  };
+  
+  const handleEditRoom = (room) => {
+    setSelectedRoom(room);
+    setRoomFormData({
+      title: room.title,
+      price: room.price,
+      maxPeople: room.maxPeople,
+      desc: room.desc,
+      hotelId: room.hotelId,
+      roomNumbers: room.roomNumbers
+    });
+    setRoomNumberInput('');
+    setIsRoomDialogOpen(true);
+  };
+  
+  const handleAddRoomNumber = () => {
+    if (roomNumberInput && !isNaN(Number(roomNumberInput))) {
+      const roomNumber = Number(roomNumberInput);
+      
+      // Check if the room number already exists
+      const exists = roomFormData.roomNumbers.some(r => r.number === roomNumber);
+      
+      if (!exists) {
+        setRoomFormData(prev => ({
+          ...prev,
+          roomNumbers: [...prev.roomNumbers, { number: roomNumber, unavailableDates: [] }]
+        }));
+        setRoomNumberInput('');
+      } else {
+        toast.error('This room number already exists');
+      }
+    }
+  };
+  
+  const handleRemoveRoomNumber = (number) => {
+    setRoomFormData(prev => ({
+      ...prev,
+      roomNumbers: prev.roomNumbers.filter(r => r.number !== number)
+    }));
+  };
+  
+  const handleSubmitRoomForm = async (e) => {
+    e.preventDefault();
+    
+    if (roomFormData.roomNumbers.length === 0) {
+      toast.error('Please add at least one room number');
+      return;
+    }
+    
+    try {
+      if (selectedRoom) {
+        const updatedRoom = await roomAPI.updateRoom(selectedRoom._id || '', roomFormData);
+        setRooms(rooms.map(r => r._id === selectedRoom._id ? updatedRoom : r));
+        toast.success('Room updated successfully');
+      } else {
+        const newRoom = await roomAPI.createRoom(roomFormData);
+        setRooms([...rooms, newRoom]);
+        toast.success('Room added successfully');
+      }
+      
+      setIsRoomDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving room:', error);
+      toast.error('Failed to save room');
+    }
+  };
+  
+  const handleDeleteRoom = async (roomId) => {
+    try {
+      await roomAPI.deleteRoom(roomId);
+      setRooms(rooms.filter(r => r._id !== roomId));
+      toast.success('Room deleted successfully');
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      toast.error('Failed to delete room');
+    }
+  };
+  
+  // Toggle room cleaning status
+  const handleToggleRoomCleaned = async (room) => {
     if (!room._id) return;
     
     try {
       const updatedRoom = await roomAPI.toggleRoomCleaningStatus(room._id, !room.isCleaned);
       
-      setRooms(rooms.map(r => r._id === room._id ? updatedRoom as RoomType : r));
+      setRooms(rooms.map(r => r._id === room._id ? updatedRoom : r));
       
       toast.success(`Room marked as ${updatedRoom.isCleaned ? 'cleaned' : 'needs cleaning'}`);
     } catch (error) {
@@ -188,7 +312,7 @@ const ModeratorDashboard = () => {
             <header className="mb-8">
               <h1 className="text-3xl font-bold">Moderator Dashboard</h1>
               <p className="text-muted-foreground">
-                Manage workers, room status, and bookings
+                Manage workers, rooms, and bookings
               </p>
             </header>
             
@@ -388,17 +512,27 @@ const ModeratorDashboard = () => {
                       </div>
                     </Card>
                   ))}
+                  
+                  {workers.length === 0 && (
+                    <Card className="p-8 text-center">
+                      <p className="text-muted-foreground">No workers found. Add a worker to get started.</p>
+                    </Card>
+                  )}
                 </div>
               </TabsContent>
               
               <TabsContent value="rooms" className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Room Cleaning Status</h2>
+                  <h2 className="text-xl font-semibold">Room Management</h2>
+                  <Button onClick={handleAddRoom} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Room
+                  </Button>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4">
                   {rooms.map(room => {
-                    const hotel = hotels.find(h => h.rooms?.includes(room._id || ''));
+                    const hotel = hotels.find(h => h._id === room.hotelId || h.rooms?.includes(room._id || ''));
                     
                     return (
                       <Card key={room._id} className="overflow-hidden">
@@ -410,46 +544,69 @@ const ModeratorDashboard = () => {
                                 {hotel?.name || 'Unknown Hotel'}
                               </p>
                             </div>
-                            <Button 
-                              variant={room.isCleaned ? "outline" : "default"}
-                              size="sm"
-                              onClick={() => handleToggleRoomCleaned(room)}
-                            >
-                              {room.isCleaned ? (
-                                <>
-                                  <X className="h-4 w-4 mr-2" />
-                                  Mark as Needs Cleaning
-                                </>
-                              ) : (
-                                <>
-                                  <Check className="h-4 w-4 mr-2" />
-                                  Mark as Cleaned
-                                </>
-                              )}
-                            </Button>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant={room.isCleaned ? "outline" : "default"}
+                                size="sm"
+                                onClick={() => handleToggleRoomCleaned(room)}
+                              >
+                                {room.isCleaned ? (
+                                  <>
+                                    <X className="h-4 w-4 mr-2" />
+                                    Needs Cleaning
+                                  </>
+                                ) : (
+                                  <>
+                                    <Check className="h-4 w-4 mr-2" />
+                                    Mark Clean
+                                  </>
+                                )}
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditRoom(room)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDeleteRoom(room._id || '')}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                               <span className="text-sm font-medium">Room Numbers: </span>
                               <span className="text-sm">
-                                {room.roomNumbers.map(r => r.number).join(', ')}
+                                {room.roomNumbers?.map(r => r.number).join(', ')}
                               </span>
                             </div>
                             <div>
-                              <span className="text-sm font-medium">Status: </span>
-                              <span className={`text-sm ${room.isCleaned ? 'text-green-600' : 'text-red-600'}`}>
-                                {room.isCleaned ? 'Cleaned' : 'Needs Cleaning'}
-                              </span>
+                              <span className="text-sm font-medium">Price: </span>
+                              <span className="text-sm">${room.price} per night</span>
                             </div>
                             <div>
                               <span className="text-sm font-medium">Max People: </span>
                               <span className="text-sm">{room.maxPeople}</span>
                             </div>
                           </div>
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-500">{room.desc}</p>
+                          </div>
                         </div>
                       </Card>
                     );
                   })}
+                  
+                  {rooms.length === 0 && (
+                    <Card className="p-8 text-center">
+                      <p className="text-muted-foreground">No rooms found. Add a room to get started.</p>
+                    </Card>
+                  )}
                 </div>
               </TabsContent>
               
@@ -480,7 +637,7 @@ const ModeratorDashboard = () => {
                                   const newStatus = booking.status === 'active' || booking.status === 'confirmed' ? 'completed' : 'active';
                                   bookingAPI.updateBooking(booking._id || '', { status: newStatus })
                                     .then(updatedBooking => {
-                                      setBookings(bookings.map(b => b._id === booking._id ? updatedBooking as Booking : b));
+                                      setBookings(bookings.map(b => b._id === booking._id ? updatedBooking : b));
                                       toast.success(`Booking marked as ${newStatus}`);
                                     })
                                     .catch(error => {
@@ -529,6 +686,7 @@ const ModeratorDashboard = () => {
         
         <Footer />
         
+        {/* Worker Dialog */}
         <Dialog open={isWorkerDialogOpen} onOpenChange={setIsWorkerDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
@@ -628,6 +786,131 @@ const ModeratorDashboard = () => {
                 </Button>
                 <Button type="submit">
                   {selectedWorker ? 'Update Worker' : 'Add Worker'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Room Dialog */}
+        <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedRoom ? 'Edit Room' : 'Add New Room'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <form onSubmit={handleSubmitRoomForm} className="space-y-4 py-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Room Title</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    value={roomFormData.title}
+                    onChange={handleRoomInputChange}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="hotelId">Hotel</Label>
+                  <select
+                    id="hotelId"
+                    name="hotelId"
+                    value={roomFormData.hotelId}
+                    onChange={handleRoomInputChange}
+                    required
+                    className="w-full rounded-md border border-input px-3 py-2 bg-background"
+                  >
+                    {hotels.map(hotel => (
+                      <option key={hotel._id} value={hotel._id}>
+                        {hotel.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price Per Night ($)</Label>
+                    <Input
+                      id="price"
+                      name="price"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={roomFormData.price}
+                      onChange={handleRoomInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="maxPeople">Max People</Label>
+                    <Input
+                      id="maxPeople"
+                      name="maxPeople"
+                      type="number"
+                      min="1"
+                      value={roomFormData.maxPeople}
+                      onChange={handleRoomInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="desc">Description</Label>
+                  <textarea
+                    id="desc"
+                    name="desc"
+                    value={roomFormData.desc}
+                    onChange={handleRoomInputChange}
+                    required
+                    className="w-full rounded-md border border-input px-3 py-2 bg-background h-24"
+                  ></textarea>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Room Numbers</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      placeholder="Enter room number"
+                      value={roomNumberInput}
+                      onChange={(e) => setRoomNumberInput(e.target.value)}
+                    />
+                    <Button type="button" onClick={handleAddRoomNumber}>Add</Button>
+                  </div>
+                  
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {roomFormData.roomNumbers.map(room => (
+                      <div key={room.number} className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium">
+                        Room {room.number}
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveRoomNumber(room.number)}
+                          className="ml-1 text-gray-400 hover:text-gray-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {roomFormData.roomNumbers.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No room numbers added yet</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsRoomDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {selectedRoom ? 'Update Room' : 'Add Room'}
                 </Button>
               </DialogFooter>
             </form>

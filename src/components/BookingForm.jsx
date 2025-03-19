@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInCalendarDays, addDays } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
-import { Room, Hotel } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -12,28 +11,15 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { bookingAPI, roomAPI } from '@/services/api';
 
-interface BookingFormProps {
-  hotel: Hotel;
-  room: Room;
-  roomNumber: number;
-  checkIn: Date | null;
-  checkOut: Date | null;
-  totalNights?: number; // Add totalNights to the interface
-  onClose: () => void;
-}
-
-const BookingForm = ({ hotel, room, roomNumber, checkIn, checkOut, totalNights = 1, onClose }: BookingFormProps) => {
+const BookingForm = ({ hotel, room, roomNumber, checkIn, checkOut, totalNights = 1, onClose }) => {
   const { state } = useAuth();
   const { user } = state;
   const navigate = useNavigate();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
+  const [unavailableDates, setUnavailableDates] = useState([]);
+  const [dateRange, setDateRange] = useState({
     from: checkIn || undefined,
     to: checkOut || undefined,
   });
@@ -61,20 +47,20 @@ const BookingForm = ({ hotel, room, roomNumber, checkIn, checkOut, totalNights =
     }
   }, [dateRange, room.price]);
 
-  const handleDateSelect = (range: { from?: Date; to?: Date }) => {
+  const handleDateSelect = (range) => {
     setDateRange({
       from: range.from,
       to: range.to
     });
   };
 
-  const isDateUnavailable = (date: Date) => {
+  const isDateUnavailable = (date) => {
     return unavailableDates.some(unavailableDate => 
       unavailableDate.toDateString() === date.toDateString()
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!user?._id) {
@@ -91,7 +77,7 @@ const BookingForm = ({ hotel, room, roomNumber, checkIn, checkOut, totalNights =
       setIsSubmitting(true);
       
       // Generate array of all dates in the range
-      const allDates: Date[] = [];
+      const allDates = [];
       let currentDate = new Date(dateRange.from);
       const endDate = new Date(dateRange.to);
       
@@ -116,7 +102,7 @@ const BookingForm = ({ hotel, room, roomNumber, checkIn, checkOut, totalNights =
         dateStart: dateRange.from,
         dateEnd: dateRange.to,
         totalPrice: totalPrice,
-        status: 'confirmed' as const,
+        status: 'confirmed',
       };
       
       const response = await bookingAPI.createBooking(bookingData);
@@ -137,7 +123,7 @@ const BookingForm = ({ hotel, room, roomNumber, checkIn, checkOut, totalNights =
       localStorage.setItem('bookings', JSON.stringify(bookings));
       
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Failed to book room");
     } finally {
       setIsSubmitting(false);

@@ -1,188 +1,174 @@
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
+import { authAPI, checkBackendConnection } from '@/services/api';
 import { toast } from 'sonner';
 
-// Initial state for the auth context
+// Define action types
 const initialState = {
   user: null,
   loading: false,
   error: null,
-  isAuthenticated: false
+  isAuthenticated: false,
+  backendAvailable: null,
 };
 
-// Create the auth context
-const AuthContext = createContext();
+// Create context
+const AuthContext = createContext({
+  state: initialState,
+  dispatch: () => null,
+  login: async () => {},
+  register: async () => {},
+  logout: () => {},
+});
 
-// Auth reducer function
+// Reducer function
 const authReducer = (state, action) => {
   switch (action.type) {
     case 'LOGIN_START':
+    case 'REGISTER_START':
       return {
         ...state,
         loading: true,
-        error: null
+        error: null,
       };
     case 'LOGIN_SUCCESS':
+    case 'REGISTER_SUCCESS':
       return {
         ...state,
         user: action.payload,
         loading: false,
         error: null,
-        isAuthenticated: true
+        isAuthenticated: true,
       };
     case 'LOGIN_FAILURE':
+    case 'REGISTER_FAILURE':
       return {
         ...state,
-        user: null,
         loading: false,
         error: action.payload,
-        isAuthenticated: false
+        isAuthenticated: false,
       };
     case 'LOGOUT':
       return {
         ...state,
         user: null,
-        loading: false,
-        error: null,
-        isAuthenticated: false
+        isAuthenticated: false,
       };
     case 'UPDATE_USER':
       return {
         ...state,
-        user: {
-          ...state.user,
-          ...action.payload
-        }
+        user: action.payload,
+      };
+    case 'BACKEND_STATUS':
+      return {
+        ...state,
+        backendAvailable: action.payload,
       };
     default:
       return state;
   }
 };
 
-// Create the auth provider component
+// Provider component
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Check for stored auth on initial load
+  // Check backend connection status
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const storedUser = localStorage.getItem('user');
-        
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          
-          // For demo purposes, we'll consider the user authenticated if there's a stored user
-          dispatch({ 
-            type: 'LOGIN_SUCCESS', 
-            payload: user 
-          });
-        }
-      } catch (error) {
-        console.error('Error checking authentication:', error);
-        localStorage.removeItem('user');
+    const checkConnection = async () => {
+      const isConnected = await checkBackendConnection();
+      dispatch({ type: 'BACKEND_STATUS', payload: isConnected });
+      
+      if (!isConnected) {
+        toast.error(
+          'Cannot connect to the backend server. Please ensure it is running at http://localhost:8000',
+          { duration: 6000 }
+        );
       }
     };
     
-    checkAuth();
+    checkConnection();
+    // Check connection periodically
+    const intervalId = setInterval(checkConnection, 30000);
+    
+    return () => clearInterval(intervalId);
   }, []);
 
+  // Check if user is logged in when the app loads
+  useEffect(() => {
+    const verifyUser = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        dispatch({ type: 'LOGIN_START' });
+        const user = await authAPI.getCurrentUser();
+        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+      } catch (error) {
+        localStorage.removeItem('token');
+        dispatch({ 
+          type: 'LOGIN_FAILURE', 
+          payload: error.message || 'Session expired. Please log in again.' 
+        });
+      }
+    };
+
+    if (state.backendAvailable) {
+      verifyUser();
+    }
+  }, [state.backendAvailable]);
+
   // Login function
-  const login = async (credentials) => {
-    dispatch({ type: 'LOGIN_START' });
+  const login = async (email, password) => {
+    if (!state.backendAvailable) {
+      toast.error('Cannot connect to the backend server. Please ensure it is running.');
+      return;
+    }
     
+    dispatch({ type: 'LOGIN_START' });
     try {
-      // Mock API call for demo purposes
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo, we'll create a mock user based on the credentials
-      const user = {
-        _id: 'user123',
-        username: credentials.username,
-        email: `${credentials.username}@example.com`,
-        country: 'United States',
-        city: 'New York',
-        isAdmin: credentials.username === 'admin',
-        isModerator: ['admin', 'mod'].includes(credentials.username)
-      };
-      
-      // Store user in localStorage
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      toast.success('Login successful');
-      
-      return user;
+      const data = await authAPI.login(email, password);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: data.user });
+      toast.success('Logged in successfully');
     } catch (error) {
-      dispatch({ type: 'LOGIN_FAILURE', payload: error.message });
-      toast.error(error.message || 'Login failed');
-      throw error;
+      dispatch({ 
+        type: 'LOGIN_FAILURE', 
+        payload: error.message || 'Failed to login' 
+      });
+      toast.error(error.message || 'Failed to login');
     }
   };
 
   // Register function
   const register = async (userData) => {
-    dispatch({ type: 'LOGIN_START' });
+    if (!state.backendAvailable) {
+      toast.error('Cannot connect to the backend server. Please ensure it is running at http://localhost:8000');
+      return;
+    }
     
+    dispatch({ type: 'REGISTER_START' });
     try {
-      // Mock API call for demo purposes
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo, we'll create a mock user based on the user data
-      const user = {
-        _id: 'user' + Date.now(),
-        ...userData,
-        isAdmin: false,
-        isModerator: false
-      };
-      
-      // Store user in localStorage
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      toast.success('Registration successful');
-      
-      return user;
+      const data = await authAPI.register(userData);
+      dispatch({ type: 'REGISTER_SUCCESS', payload: data.user });
+      toast.success('Registered successfully');
     } catch (error) {
-      dispatch({ type: 'LOGIN_FAILURE', payload: error.message });
-      toast.error(error.message || 'Registration failed');
-      throw error;
+      dispatch({ 
+        type: 'REGISTER_FAILURE', 
+        payload: error.message || 'Failed to register' 
+      });
+      toast.error(error.message || 'Failed to register');
     }
   };
 
   // Logout function
   const logout = () => {
-    localStorage.removeItem('user');
+    authAPI.logout();
     dispatch({ type: 'LOGOUT' });
     toast.success('Logged out successfully');
   };
 
-  // Update user function
-  const updateUser = (userData) => {
-    try {
-      const updatedUser = { ...state.user, ...userData };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      dispatch({ type: 'UPDATE_USER', payload: userData });
-      toast.success('Profile updated successfully');
-      
-      return updatedUser;
-    } catch (error) {
-      toast.error(error.message || 'Failed to update profile');
-      throw error;
-    }
-  };
-
   return (
-    <AuthContext.Provider
-      value={{
-        state,
-        login,
-        register,
-        logout,
-        updateUser
-      }}
-    >
+    <AuthContext.Provider value={{ state, dispatch, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -191,10 +177,8 @@ export const AuthProvider = ({ children }) => {
 // Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  
   return context;
 };
