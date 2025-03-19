@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { MapPin, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Booking } from '@/types';
+import { Booking, Hotel, Room } from '@/types';
 import BookingReceipt from './BookingReceipt';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
@@ -20,10 +20,38 @@ const formatDate = (dateString: string | Date) => {
   return format(date, 'MMM dd, yyyy');
 };
 
+// Create a default Hotel object that satisfies the Hotel interface
+const defaultHotel: Hotel = {
+  name: 'Unknown Hotel',
+  city: 'Unknown Location',
+  photos: [],
+  type: 'hotel',
+  address: 'Unknown Address',
+  distance: '0 km',
+  title: 'Unknown Hotel',
+  desc: 'No description available',
+  rating: 0,
+  rooms: [],
+  cheapestPrice: 0,
+  featured: false
+};
+
+// Create a default Room object that satisfies the Room interface
+const defaultRoom: Room = {
+  title: 'Standard Room',
+  maxPeople: 2,
+  price: 0,
+  desc: 'No description available',
+  roomNumbers: [],
+  isCleaned: true,
+  isAssigned: false,
+  bookedBy: null
+};
+
 const BookingItem: React.FC<BookingItemProps> = ({ booking, onCancel, isDateInFuture }) => {
   const [showReceipt, setShowReceipt] = useState(false);
-  const hotel = booking.hotel || { name: 'Unknown Hotel', city: 'Unknown Location', photos: [] };
-  const room = booking.room || { title: 'Standard Room', maxPeople: 2 };
+  const hotel = booking.hotel || defaultHotel;
+  const room = booking.room || defaultRoom;
   
   return (
     <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow animate-fade-in-up">
