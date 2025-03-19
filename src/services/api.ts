@@ -2,7 +2,11 @@ import axios from 'axios';
 import { Hotel, Room, User, Booking, SearchCriteria, Worker, Moderator } from '@/types';
 
 // Create an axios instance with the base URL
-const API_URL = 'http://localhost:8000/api';
+// Use environment variable if available, otherwise default to localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+// Flag to enable mock API mode when backend is unavailable
+let useMockApi = false;
 
 const api = axios.create({
   baseURL: API_URL,
@@ -30,11 +34,14 @@ api.interceptors.request.use(
 const handleApiError = (error: any) => {
   console.error('API Error:', error);
   
-  if (error.code === 'ERR_NETWORK') {
-    console.error('Network error: Cannot connect to the backend server');
+  if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED' || error.code === 'ERR_CONNECTION_REFUSED') {
+    console.error('Network error: Cannot connect to the backend server at', API_URL);
+    // Set mock API flag when connection fails
+    useMockApi = true;
     return { 
       error: true,
-      message: 'Cannot connect to the server. Please ensure the backend server is running at ' + API_URL
+      message: `Cannot connect to the server at ${API_URL}. The application will use mock data. Please ensure the backend server is running.`,
+      mockMode: true
     };
   }
   
@@ -50,9 +57,12 @@ const handleApiError = (error: any) => {
   } else if (error.request) {
     // The request was made but no response was received
     console.error('Request error:', error.request);
+    // Set mock API flag when request fails
+    useMockApi = true;
     return { 
       error: true,
-      message: 'No response from server. Please try again later.',
+      message: 'No response from server. Using mock data instead.',
+      mockMode: true
     };
   } else {
     // Something happened in setting up the request that triggered an Error
@@ -64,11 +74,63 @@ const handleApiError = (error: any) => {
   }
 };
 
+// Mock data for when backend is unavailable
+const mockUsers = [
+  {
+    _id: 'user1',
+    username: 'user',
+    email: 'user@example.com',
+    country: 'United States',
+    city: 'New York',
+    isAdmin: false,
+    isModerator: false,
+  },
+  {
+    _id: 'mod1',
+    username: 'moderator',
+    email: 'mod@example.com',
+    country: 'United States',
+    city: 'Boston',
+    isAdmin: false,
+    isModerator: true,
+  },
+  {
+    _id: 'admin1',
+    username: 'admin',
+    email: 'admin@example.com',
+    country: 'United States',
+    city: 'San Francisco',
+    isAdmin: true,
+    isModerator: false,
+  }
+];
+
 // Authentication with redirect to homepage on logout
 export const authAPI = {
   login: async (email: string, password: string) => {
     try {
       console.log('Attempting login with:', { email });
+      
+      // Check if we're using mock mode due to backend unavailability
+      if (useMockApi) {
+        console.log('Using mock login due to backend unavailability');
+        // Simulate successful login with mock data
+        const mockUser = mockUsers.find(user => user.email === email);
+        if (mockUser && password === 'password123') {
+          const mockToken = 'mock-jwt-token-' + Date.now();
+          localStorage.setItem('token', mockToken);
+          console.log('Mock login successful:', mockUser);
+          
+          return {
+            token: mockToken,
+            user: mockUser,
+            mockMode: true
+          };
+        } else {
+          throw new Error('Invalid credentials');
+        }
+      }
+      
       const response = await api.post('/auth/login', { email, password });
       console.log('Login response:', response.data);
       
@@ -78,15 +140,53 @@ export const authAPI = {
       } else {
         throw new Error('Invalid response format: missing token');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      throw handleApiError(error);
+      if (error.mockMode) {
+        throw error; // Re-throw mock errors
+      }
+      const errorData = handleApiError(error);
+      
+      // If backend is unavailable and we're now in mock mode, retry with mock
+      if (errorData.mockMode && !useMockApi) {
+        console.log('Retrying login with mock data');
+        useMockApi = true;
+        return authAPI.login(email, password);
+      }
+      
+      throw errorData;
     }
   },
   
   register: async (userData: Partial<User>) => {
     try {
       console.log('Attempting registration with:', { ...userData, password: '***' });
+      
+      // Check if we're using mock mode due to backend unavailability
+      if (useMockApi) {
+        console.log('Using mock registration due to backend unavailability');
+        // Simulate successful registration with mock data
+        const mockUser = {
+          _id: 'new-user-' + Date.now(),
+          username: userData.username || 'newuser',
+          email: userData.email || 'new@example.com',
+          country: userData.country || 'Unknown',
+          city: userData.city || 'Unknown',
+          isAdmin: false,
+          isModerator: false,
+        };
+        
+        const mockToken = 'mock-jwt-token-' + Date.now();
+        localStorage.setItem('token', mockToken);
+        
+        console.log('Mock registration successful:', mockUser);
+        return {
+          token: mockToken,
+          user: mockUser,
+          mockMode: true
+        };
+      }
+      
       const response = await api.post('/auth/register', userData);
       console.log('Register response:', response.data);
       
@@ -96,15 +196,29 @@ export const authAPI = {
       } else {
         throw new Error('Invalid response format: missing token');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
-      throw handleApiError(error);
+      if (error.mockMode) {
+        throw error; // Re-throw mock errors
+      }
+      const errorData = handleApiError(error);
+      
+      // If backend is unavailable and we're now in mock mode, retry with mock
+      if (errorData.mockMode && !useMockApi) {
+        console.log('Retrying registration with mock data');
+        useMockApi = true;
+        return authAPI.register(userData);
+      }
+      
+      throw errorData;
     }
   },
   
   logout: () => {
     console.log('Logging out user');
     localStorage.removeItem('token');
+    // Reset mock API flag
+    useMockApi = false;
     // Redirect to homepage when logging out
     window.location.href = '/';
   },
@@ -112,12 +226,41 @@ export const authAPI = {
   getCurrentUser: async () => {
     try {
       console.log('Fetching current user');
+      
+      // Check if we're using mock mode due to backend unavailability
+      if (useMockApi) {
+        console.log('Using mock getCurrentUser due to backend unavailability');
+        // Get the token to determine which mock user to return
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No token found');
+        }
+        
+        // Return a mock user based on token
+        if (token.includes('admin')) {
+          return mockUsers.find(u => u.isAdmin);
+        } else if (token.includes('mod')) {
+          return mockUsers.find(u => u.isModerator);
+        } else {
+          return mockUsers.find(u => !u.isAdmin && !u.isModerator);
+        }
+      }
+      
       const response = await api.get('/auth/me');
       console.log('Current user response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Get current user error:', error);
-      throw handleApiError(error);
+      const errorData = handleApiError(error);
+      
+      // If backend is unavailable and we're now in mock mode, retry with mock
+      if (errorData.mockMode && !useMockApi) {
+        console.log('Retrying getCurrentUser with mock data');
+        useMockApi = true;
+        return authAPI.getCurrentUser();
+      }
+      
+      throw errorData;
     }
   },
 };
@@ -476,13 +619,30 @@ export const userAPI = {
 // Check if the backend is available
 export const checkBackendConnection = async () => {
   try {
+    if (useMockApi) {
+      console.log('Using mock mode, skipping backend connection check');
+      return false;
+    }
+    
     await api.get('/health-check', { timeout: 3000 });
+    // Reset mock API flag if connection succeeds
+    useMockApi = false;
     return true;
   } catch (error) {
     console.error('Backend connection check failed:', error);
+    // Enable mock API mode
+    useMockApi = true;
     return false;
   }
 };
 
-export default api;
+// Explicitly check if we should use mock mode
+export const isMockMode = () => useMockApi;
 
+// Force the API to use mock mode (useful for testing or when backend is known to be down)
+export const enableMockMode = () => {
+  useMockApi = true;
+  console.log('Mock API mode enabled');
+};
+
+export default api;

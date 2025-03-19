@@ -5,13 +5,14 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Hotel, Eye, EyeOff } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Hotel, Eye, EyeOff, AlertCircle, Info } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const Login = () => {
-  const { login, state } = useAuth();
-  const { isAuthenticated, loading, error } = state;
+  const { login, state, enableMockMode } = useAuth();
+  const { isAuthenticated, loading, error, backendAvailable, mockMode } = state;
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
@@ -21,6 +22,7 @@ const Login = () => {
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [tryingMockMode, setTryingMockMode] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -42,6 +44,17 @@ const Login = () => {
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
   };
+  
+  const handleUseMockMode = () => {
+    setTryingMockMode(true);
+    enableMockMode();
+    
+    // Pre-fill a demo account
+    setFormData({
+      email: 'user@example.com',
+      password: 'password123',
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -49,6 +62,33 @@ const Login = () => {
       
       <main className="flex-grow flex items-center justify-center py-16 px-4 bg-gray-50">
         <div className="w-full max-w-md">
+          {!backendAvailable && !mockMode && !tryingMockMode && (
+            <Alert variant="warning" className="mb-6 animate-fadeIn">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Backend Connection Failed</AlertTitle>
+              <AlertDescription>
+                Cannot connect to the backend server. 
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-blue-600 font-semibold ml-1"
+                  onClick={handleUseMockMode}
+                >
+                  Use demo mode instead
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {mockMode && (
+            <Alert variant="info" className="mb-6 animate-fadeIn">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Demo Mode Active</AlertTitle>
+              <AlertDescription>
+                You're using demo mode with sample data. Use one of the demo accounts below to log in.
+              </AlertDescription>
+            </Alert>
+          )}
+        
           <div className="bg-white rounded-lg shadow-md overflow-hidden animate-fade-in-up">
             {/* Header */}
             <div className="p-6 bg-hotel-500 text-white text-center">

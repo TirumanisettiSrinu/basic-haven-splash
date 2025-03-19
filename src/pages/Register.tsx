@@ -5,15 +5,16 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Hotel, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Hotel, Eye, EyeOff, Check, AlertCircle, Info } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { cn } from '@/lib/utils';
 
 const Register = () => {
-  const { register, state } = useAuth();
-  const { isAuthenticated, loading, error, backendAvailable } = state;
+  const { register, state, enableMockMode } = useAuth();
+  const { isAuthenticated, loading, error, backendAvailable, mockMode } = state;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -31,6 +32,7 @@ const Register = () => {
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [tryingMockMode, setTryingMockMode] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -147,11 +149,6 @@ const Register = () => {
       console.log('Form validation failed', formErrors);
       return;
     }
-    
-    if (!backendAvailable) {
-      console.error('Backend not available');
-      return;
-    }
 
     console.log('Sending registration data');
     const { confirmPassword, ...userData } = formData;
@@ -161,6 +158,22 @@ const Register = () => {
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
   };
+  
+  const handleUseMockMode = () => {
+    setTryingMockMode(true);
+    enableMockMode();
+    
+    // Prefill the form with sample data
+    setFormData({
+      username: 'newuser',
+      email: 'newuser@example.com',
+      password: 'Password123',
+      confirmPassword: 'Password123',
+      country: 'United States',
+      city: 'New York',
+      phone: '',
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -168,13 +181,31 @@ const Register = () => {
       
       <main className="flex-grow flex items-center justify-center py-16 px-4 bg-gray-50">
         <div className="w-full max-w-lg animate-fade-in-up">
-          {!backendAvailable && (
-            <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md shadow text-center">
-              <p className="font-medium">Backend server is not available</p>
-              <p className="text-sm mt-1">
-                Please ensure the backend server is running at http://localhost:8000
-              </p>
-            </div>
+          {!backendAvailable && !mockMode && !tryingMockMode && (
+            <Alert variant="warning" className="mb-6 animate-fadeIn">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Backend Connection Failed</AlertTitle>
+              <AlertDescription>
+                Cannot connect to the backend server. 
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-blue-600 font-semibold ml-1"
+                  onClick={handleUseMockMode}
+                >
+                  Use demo mode instead
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {mockMode && (
+            <Alert variant="info" className="mb-6 animate-fadeIn">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Demo Mode Active</AlertTitle>
+              <AlertDescription>
+                You're using demo mode with sample data. Your registration will be processed locally.
+              </AlertDescription>
+            </Alert>
           )}
           
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -393,7 +424,7 @@ const Register = () => {
               <Button
                 type="submit"
                 className="w-full bg-hotel-500 hover:bg-hotel-600 mt-6"
-                disabled={loading || !backendAvailable}
+                disabled={loading}
               >
                 {loading ? "Creating Account..." : "Create Account"}
               </Button>
